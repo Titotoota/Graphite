@@ -11,12 +11,15 @@ A lightweight graphing calculator for algebra, trig and calculus — runs entire
 - Show/hide individual expressions, color-code each one
 - On-screen math keypad (works on touch devices)
 - Installable to your phone's home screen and works offline after the first load
+- Works on phones (portrait and landscape), iPad and computers — scroll to zoom and type straight from the keyboard on a PC
 
-## Installing on your phone
+## Installing
 
-1. Open the live app link above in Safari (iOS) or Chrome (Android).
-2. Tap the Share button, then **Add to Home Screen**.
-3. Open it from the home screen icon — it runs full screen and works offline.
+- **iPhone / iPad:** open the live app link in Safari, tap Share, then **Add to Home Screen**.
+- **Android:** open it in Chrome, then ⋮ menu → **Install app**.
+- **Computer:** just use the website (Chrome/Edge also offer an install button in the address bar).
+
+It runs full screen from the home screen icon and works offline after the first visit.
 
 ## Development
 
@@ -29,6 +32,11 @@ python3 -m http.server
 ```
 
 Then open `http://localhost:8000`.
+
+## Versions
+
+- **v2.0** — graphite icon, iPad / desktop / landscape layouts, smoother dashed inequality edges, curves now reach their asymptotes and domain edges (e.g. `ln(x)` near 0), and no more flicker on trig graphs when zoomed far out.
+- **v1.0** — first release. Preserved on the [`v1` branch](https://github.com/Titotoota/Graphite/tree/v1).
 
 ## License
 

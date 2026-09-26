@@ -172,7 +172,6 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 #sheet.open{display:block}
 #sheet .box{position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow:auto;background:var(--card);
   border-radius:16px 16px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 30px rgba(0,0,0,.2)}
-@media (min-width:760px){#sheet .box{left:50%;right:auto;width:460px;transform:translateX(-50%);bottom:auto;top:10%;border-radius:16px}}
 .sh-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .sh-h h2{font-size:19px;margin:0;font-weight:700}
 .sh-h button{width:34px;height:34px;border-radius:9px;font-size:22px;color:var(--muted)}
@@ -231,14 +230,40 @@ table.tv th{color:var(--muted);font-weight:400;font-family:"STIX Two Text",serif
 .menu-top{display:flex;gap:8px;margin-bottom:4px}
 .menu-top button{flex:1;border:1px solid var(--rule);border-radius:11px;padding:11px;background:var(--paper);font-weight:700}
 
-/* wide screens: list + keypad on the left, graph on the right */
-@media (min-width:760px){
+/* wide screens (tablets, computers, phones in landscape): list + keypad on the left, graph on the right */
+@media (min-width:760px), (orientation:landscape) and (min-width:520px) and (max-height:540px){
   #app{grid-template-columns:min(390px,42vw) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;}
   #graphWrap{grid-column:2;grid-row:1 / span 2}
   #grip{display:none}
   #panel{grid-column:1;grid-row:1;height:auto;border-right:1px solid var(--rule)}
   body.kb #panel{height:auto}
   #keypad{grid-column:1;grid-row:2;border-right:1px solid var(--rule)}
+  #sheet .box{left:50%;right:auto;width:min(460px,calc(100% - 32px));transform:translateX(-50%);bottom:auto;top:max(16px,8%);max-height:calc(100% - 2*max(16px,8%));border-radius:16px}
+}
+@media (min-width:1280px){
+  #app{grid-template-columns:420px minmax(0,1fr)}
+}
+/* short screens (phones in landscape): a more compact keypad so the list keeps some room */
+@media (max-height:540px){
+  #keypad{padding:4px}
+  .kp{gap:4px}
+  .kp+.kp,.ctl{margin-top:4px}
+  .kp button,.ctl button{height:34px}
+  .ex{min-height:48px}
+  .gut{padding-top:11px}
+  .more{padding-top:10px}
+}
+/* mouse and trackpad */
+#cv{cursor:grab}
+#cv:active{cursor:grabbing}
+@media (hover:hover) and (pointer:fine){
+  .fab button:hover,.kp button:hover,.act button:hover,.card-btn:hover,.menu-top button:hover,.gx button:hover{filter:brightness(.95)}
+  :root[data-theme="dark"] :is(.fab,.kp,.act,.menu-top) button:hover,:root[data-theme="dark"] .card-btn:hover{filter:brightness(1.18)}
+  .ex:hover .more,.addrow:hover{color:var(--ink)}
+  #panel{scrollbar-width:thin}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) :is(.fab,.kp,.act,.menu-top) button:hover,:root:not([data-theme="light"]) .card-btn:hover{filter:brightness(1.18)}
 }
 </style>
 </head>
@@ -473,8 +498,118 @@ function varsOf(n,set=new Set()){
 const isVar=(n,name)=>n&&n.k==='var'&&n.n===name;
 const numLit=n=>n.k==='num'&&n.lit?n.v:(n.k==='neg'&&n.a.k==='num'&&n.a.lit?-n.a.v:null);
 
+/* ---------------- interval arithmetic ----------------
+   Bounds the range of a function over a whole pixel column, so the plotter can find
+   asymptotes and domain edges exactly and draw too-dense-to-see oscillation as a band.
+   A value is a sorted list of disjoint [lo,hi] pieces; [] = undefined, null = unknown. */
+const TAU=2*Math.PI,HPI=Math.PI/2;
+function inorm(ps){
+  const a=[];
+  for(const p of ps){const lo=isNaN(p[0])?-Infinity:p[0],hi=isNaN(p[1])?Infinity:p[1];if(lo<=hi)a.push([lo,hi]);}
+  if(a.length<2)return a;
+  a.sort((p,q)=>p[0]-q[0]);
+  const out=[a[0]];
+  for(let i=1;i<a.length;i++){const l=out[out.length-1],p=a[i];if(p[0]<=l[1]){if(p[1]>l[1])l[1]=p[1];}else out.push(p);}
+  while(out.length>4){let k=0,g=Infinity;for(let i=0;i<out.length-1;i++){const d=out[i+1][0]-out[i][1];if(d<g){g=d;k=i;}}out[k][1]=out[k+1][1];out.splice(k+1,1);}
+  return out;
+}
+function ieach(A,f){if(!A)return null;const r=[];for(const p of A){const q=f(p[0],p[1]);if(q===null)return null;for(const x of q)r.push(x);}return inorm(r);}
+function ibin(A,B,f){if(!A||!B)return null;const r=[];for(const a of A)for(const b of B)for(const x of f(a,b))r.push(x);return inorm(r);}
+const mulE=(x,y)=>(x===0||y===0)?0:x*y;
+function imulP(a,b){const p=[mulE(a[0],b[0]),mulE(a[0],b[1]),mulE(a[1],b[0]),mulE(a[1],b[1])];return[[Math.min(...p),Math.max(...p)]];}
+function irecipP(lo,hi){
+  if(lo>0||hi<0)return[[1/hi,1/lo]];
+  if(lo===0&&hi===0)return[];
+  if(lo===0)return[[1/hi,Infinity]];
+  if(hi===0)return[[-Infinity,1/lo]];
+  return[[-Infinity,1/lo],[1/hi,Infinity]];
+}
+const irecip=A=>ieach(A,irecipP);
+const imono=(f,inc,dlo=-Infinity,dhi=Infinity)=>A=>ieach(A,(lo,hi)=>{
+  lo=Math.max(lo,dlo);hi=Math.min(hi,dhi);if(lo>hi)return[];
+  const a=f(lo),b=f(hi);return[inc?[a,b]:[b,a]];});
+function isinP(a,b){
+  if(!isFinite(a)||!isFinite(b)||b-a>=TAU)return[[-1,1]];
+  const sa=Math.sin(a),sb=Math.sin(b);let lo=Math.min(sa,sb),hi=Math.max(sa,sb);
+  if(HPI+TAU*Math.ceil((a-HPI)/TAU)<=b)hi=1;
+  if(-HPI+TAU*Math.ceil((a+HPI)/TAU)<=b)lo=-1;
+  return[[lo,hi]];
+}
+function itanP(a,b){
+  if(!isFinite(a)||!isFinite(b)||b-a>=Math.PI)return[[-Infinity,Infinity]];
+  const pole=HPI+Math.PI*Math.ceil((a-HPI)/Math.PI);
+  if(pole<=b)return[[Math.tan(a),Infinity],[-Infinity,Math.tan(b)]];
+  return[[Math.tan(a),Math.tan(b)]];
+}
+const iscale=(A,k,c=0)=>ieach(A,(lo,hi)=>[[lo*k+c,hi*k+c]]);
+const isin=A=>ieach(iscale(A,ANG),isinP);
+const icos=A=>ieach(iscale(A,ANG,HPI),isinP);
+const itan=A=>ieach(iscale(A,ANG),itanP);
+const icot=A=>ieach(ieach(iscale(A,ANG,-HPI),itanP),(lo,hi)=>[[-hi,-lo]]);
+const iln=imono(Math.log,true,0);
+function ipow(A,B){
+  if(!A||!B)return null;
+  if(B.length===1&&B[0][0]===B[0][1]&&isFinite(B[0][0])){
+    const p=B[0][0];
+    if(p===0)return A.length?[[1,1]]:[];
+    if(p<0)return irecip(ipow(A,[[-p,-p]]));
+    if(Number.isInteger(p)){
+      const even=p%2===0;
+      return ieach(A,(lo,hi)=>{const a=Math.pow(lo,p),b=Math.pow(hi,p);
+        if(!even)return[[a,b]];if(lo>=0)return[[a,b]];if(hi<=0)return[[b,a]];return[[0,Math.max(a,b)]];});
+    }
+    return ieach(A,(lo,hi)=>{const r=[];
+      for(const[u,v]of[[lo,Math.min(hi,0)],[Math.max(lo,0),hi]]){if(u>v)continue;const gu=rpow(u,p),gv=rpow(v,p);if(isNaN(gu)||isNaN(gv))continue;r.push([Math.min(gu,gv),Math.max(gu,gv)]);}
+      return r;});
+  }
+  if(A.length===1&&A[0][0]===A[0][1]&&A[0][0]>0){
+    const a=A[0][0];return ieach(B,(lo,hi)=>{const u=Math.pow(a,lo),v=Math.pow(a,hi);return[[Math.min(u,v),Math.max(u,v)]];});
+  }
+  if(A.every(p=>p[0]>=0))return IFN.exp(ibin(B,iln(A),imulP));
+  return null;
+}
+const IFN={
+  sin:isin,cos:icos,tan:itan,
+  csc:A=>irecip(isin(A)),sec:A=>irecip(icos(A)),cot:icot,
+  asin:A=>iscale(imono(Math.asin,true,-1,1)(A),1/ANG),acos:A=>iscale(imono(Math.acos,false,-1,1)(A),1/ANG),atan:A=>iscale(imono(Math.atan,true)(A),1/ANG),
+  sinh:imono(Math.sinh,true),tanh:imono(Math.tanh,true),
+  cosh:A=>ieach(A,(lo,hi)=>{const a=Math.cosh(lo),b=Math.cosh(hi);return[[lo<=0&&hi>=0?1:Math.min(a,b),Math.max(a,b)]];}),
+  ln:iln,log:imono(Math.log10,true,0),exp:imono(Math.exp,true),sqrt:imono(Math.sqrt,true,0),floor:imono(Math.floor,true),
+  abs:A=>ieach(A,(lo,hi)=>[lo>=0?[lo,hi]:hi<=0?[-hi,-lo]:[0,Math.max(-lo,hi)]]),
+  root:(N,A)=>(N&&N.length===1&&N[0][0]===N[0][1]&&N[0][0]!==0)?(()=>{const n=N[0][0];
+    if(Number.isInteger(n)&&Math.abs(n)%2===1)return ieach(A,(lo,hi)=>{const f=v=>v<0?-Math.pow(-v,1/n):Math.pow(v,1/n),a=f(lo),b=f(hi);return[[Math.min(a,b),Math.max(a,b)]];});
+    return ieach(A,(lo,hi)=>{lo=Math.max(lo,0);if(lo>hi)return[];const a=Math.pow(lo,1/n),b=Math.pow(hi,1/n);return[[Math.min(a,b),Math.max(a,b)]];});})():null,
+  logb:(Bs,A)=>ibin(iln(A),irecip(iln(Bs)),imulP)
+};
+function compileI(n,vn){
+  switch(n.k){
+    case 'num':{const v=[[n.v,n.v]];return()=>v;}
+    case 'var':{const nm=n.n;
+      if(nm===vn)return X=>X;
+      if(RESERVED.has(nm))throw 0;
+      return()=>{const v=VALS[nm];return v===undefined||isNaN(v)?[]:[[v,v]];};}
+    case 'neg':{const a=compileI(n.a,vn);return X=>ieach(a(X),(lo,hi)=>[[-hi,-lo]]);}
+    case 'bin':{const a=compileI(n.a,vn),b=compileI(n.b,vn);
+      switch(n.op){
+        case '+':return X=>ibin(a(X),b(X),(p,q)=>[[p[0]+q[0],p[1]+q[1]]]);
+        case '-':return X=>ibin(a(X),b(X),(p,q)=>[[p[0]-q[1],p[1]-q[0]]]);
+        case '*':return X=>ibin(a(X),b(X),imulP);
+        case '/':return X=>ibin(a(X),irecip(b(X)),imulP);
+        case '^':return X=>ipow(a(X),b(X));
+      }break;}
+    case 'call':{
+      const f=IFN[n.f];if(!f)throw 0;
+      const args=n.args.map(a=>compileI(a,vn));
+      if(args.length===1){const a=args[0];return X=>f(a(X));}
+      const[a,b]=args;return X=>f(a(X),b(X));}
+  }
+  throw 0;
+}
+function tryCompileI(n,vn){try{const g=compileI(n,vn);return X=>{try{return g(X);}catch(x){return null;}};}catch(x){return null;}}
+
 /* ---------------- state ---------------- */
 const KEY='graphite-v1';
+const APP_VERSION='2.0';
 let S;
 function defaultState(){
   return{exprs:[],view:null,set:{deg:false,pi:false,grid:true,uc:false,theme:'auto'},uc:Math.PI/6,nid:1,ci:0,ph:null};
@@ -506,7 +641,7 @@ function analyze(){
   for(const k in VALS)delete VALS[k];
   const defs=new Map();
   for(const e of S.exprs){
-    e.kind='empty';e.err=null;e.ast=null;e.missing=null;e.f=null;e.defName=null;
+    e.kind='empty';e.err=null;e.ast=null;e.missing=null;e.f=null;e.fi=null;e.fnode=null;e.defName=null;
     if(!e.tree.items.length)continue;
     try{e.ast=parse(toStr(e.tree));}catch(ex){e.kind='error';e.err=ex instanceof MathErr?ex.message:'Can’t read this expression';continue;}
     if(!e.ast){continue;}
@@ -548,7 +683,7 @@ function analyze(){
         if(vs.has('y'))throw err('Add “= …” to make this an equation');
         if(vs.has('θ'))throw err('Use θ in a polar equation, like r = 2 + sin(θ)');
         e.f=compile(a);
-        if(vs.has('x')){e.kind='fx';}else{e.kind='value';}
+        if(vs.has('x')){e.kind='fx';e.fnode=a;}else{e.kind='value';}
         continue;
       }
       if(vs.has('θ')&&!polar)throw err('θ only works in r = … (polar)');
@@ -560,10 +695,10 @@ function analyze(){
       const[L,Rt]=a.terms;
       if(eq){
         const lv=varsOf(L),rv=varsOf(Rt);
-        if(isVar(L,'y')&&!rv.has('y')){e.kind='fx';e.f=compile(Rt);continue;}
-        if(isVar(Rt,'y')&&!lv.has('y')){e.kind='fx';e.f=compile(L);continue;}
-        if(isVar(L,'x')&&!rv.has('x')){e.kind='gy';e.f=compile(Rt);continue;}
-        if(isVar(Rt,'x')&&!lv.has('x')){e.kind='gy';e.f=compile(L);continue;}
+        if(isVar(L,'y')&&!rv.has('y')){e.kind='fx';e.f=compile(Rt);e.fnode=Rt;continue;}
+        if(isVar(Rt,'y')&&!lv.has('y')){e.kind='fx';e.f=compile(L);e.fnode=L;continue;}
+        if(isVar(L,'x')&&!rv.has('x')){e.kind='gy';e.f=compile(Rt);e.fnode=Rt;continue;}
+        if(isVar(Rt,'x')&&!lv.has('x')){e.kind='gy';e.f=compile(L);e.fnode=L;continue;}
         const l=compile(L),r=compile(Rt);
         e.kind='implicit';e.pairs=[{F:(x,y)=>l(x,y,0)-r(x,y,0),strict:false}];continue;
       }
@@ -571,6 +706,7 @@ function analyze(){
       e.kind='region';e.pairs=a.ops.map((op,i)=>({F:(x,y)=>fs[i](x,y,0)-fs[i+1](x,y,0),op,strict:op==='<'||op==='>'}));
     }catch(ex){e.kind='error';e.err=ex instanceof MathErr?ex.message:'Can’t read this expression';}
   }
+  for(const e of S.exprs)if(e.fnode)e.fi=tryCompileI(e.fnode,e.kind==='fx'?'x':'y');
 }
 function recomputeDefs(){for(const e of defOrder){try{e.value=e.f(0,0,0);VALS[e.defName]=e.value;}catch(x){}}}
 
@@ -902,8 +1038,19 @@ function setKb(on){if(!on&&document.body.classList.contains('kb'))noClickUntil=p
 
 /* physical keyboard */
 document.addEventListener('keydown',ev=>{
-  if(!focus||ev.target.closest('input')||ev.metaKey||ev.ctrlKey||ev.altKey)return;
-  const k=ev.key;let a=null;
+  if(ev.target.closest('input')||ev.metaKey||ev.ctrlKey||ev.altKey||sheet.classList.contains('open'))return;
+  const k=ev.key;
+  if(!focus){
+    if(k.length===1&&/[0-9a-zA-Z.(\-|]/.test(k)){const last=S.exprs[S.exprs.length-1];
+      if(last&&!last.tree.items.length)focusExpr(last.id);else{const n=newExpr();S.exprs.push(n);focusExpr(n.id);}}
+    else return;
+  }
+  if(k==='ArrowUp'||k==='ArrowDown'){
+    const i=S.exprs.findIndex(e=>e.id===focus.id),j=i+(k==='ArrowUp'?-1:1);
+    if(j>=0&&j<S.exprs.length){ev.preventDefault();const id=S.exprs[j].id;focus=null;tidy();focusExpr(id);}
+    return;
+  }
+  let a=null;
   if(/^[0-9a-zA-Z.]$/.test(k))a='c:'+k;
   else a={'+':'c:+','-':'c:−','*':'c:×','/':'frac','^':'pow','(':'paren',')':'close','|':'abs','=':'c:=','<':'c:<','>':'c:>',',':'c:,',':':'c::','{':'brace','}':'rbrace',
     Backspace:'bksp',ArrowLeft:'left',ArrowRight:'right',Enter:'enter',Escape:'hide'}[k];
@@ -990,37 +1137,122 @@ function drawGrid(){
 }
 const LW=2.6;
 function isDiscontinuous(f,x0,x1,y0,y1){
-  for(let k=0;k<14;k++){const xm=(x0+x1)/2,ym=f(xm,0,0);if(!isFinite(ym))return true;
+  for(let k=0;k<60;k++){const xm=(x0+x1)/2;if(xm===x0||xm===x1)break;const ym=f(xm,0,0);if(!isFinite(ym))return true;
     if(Math.abs(ym-y0)>Math.abs(y1-ym)){x1=xm;y1=ym;}else{x0=xm;y0=ym;}}
   return Math.abs(y1-y0)*V.s>1.5;
 }
 const CLAMP=v=>v<-5e4?-5e4:v>5e4?5e4:v;
-function plotFx(f,color){
+/* Plots y = f(x) (or x = f(y) when vert). Walks the screen in half-pixel steps; interval
+   bounds per step decide whether the step holds an asymptote, a domain edge, or so many
+   oscillations that it is drawn as a solid band instead of an aliased zig-zag. */
+function plotCurve(e,vert){
+  const f=e.f,fi=e.fi,color=e.color;
+  const U=vert?H:W,VMAX=vert?W:H,M=LW*4;
+  const toW=vert?wy:wx,uOf=vert?sy:sx,toV=vert?sx:sy;
+  const ev=vert?(w=>f(0,w,0)):(w=>f(w,0,0));
+  const iv=fi?(a,b)=>fi(a<b?[[a,b]]:[[b,a]]):null;
+  const clampV=v=>v<-M?-M:v>VMAX+M?VMAX+M:v;
+  const ext=I=>{if(!I||!I.length)return 0;const a=clampV(toV(I[0][0])),b=clampV(toV(I[I.length-1][1]));return Math.abs(a-b);};
+  const unb=I=>!!(I&&I.length&&(I[0][0]===-Infinity||I[I.length-1][1]===Infinity));
+  const off=v=>v<-M||v>VMAX+M;
+  const vInf=sgn=>clampV(toV(sgn*Infinity));
+  const pt=(u,v,move)=>{const X=vert?CLAMP(v):u,Y=vert?u:CLAMP(v);if(move)ctx.moveTo(X,Y);else ctx.lineTo(X,Y);};
+  // points from `from` towards `to`, halving the distance each time, until the curve leaves the screen or settles
+  const approach=(from,to)=>{
+    const pts=[];let last=NaN,calm=0;
+    for(let j=1;j<=1100;j++){
+      const w=to-(to-from)*Math.pow(2,-j);if(w===to)break;
+      const y=ev(w);if(!isFinite(y))break;
+      const v=toV(y);pts.push([uOf(w),v]);
+      if(off(v))break;
+      if(Math.abs(v-last)<0.05){if(++calm>4)break;}else calm=0;last=v;
+    }
+    return pts;
+  };
+  // end of the curve at a domain edge between `fin` (defined) and `nan` (undefined)
+  const edge=(fin,nan)=>{
+    let a=fin,b=nan;
+    for(let i=0;i<80;i++){const m=(a+b)/2;if(m===a||m===b)break;if(isFinite(ev(m)))a=m;else b=m;}
+    const pts=approach(fin,a);
+    const ya=ev(a);
+    if(isFinite(ya)&&!(pts.length&&off(pts[pts.length-1][1])))pts.push([uOf(a),toV(ya)]);
+    if(iv&&pts.length&&!off(pts[pts.length-1][1])){
+      const I=iv(a,b);
+      if(I&&I.length){
+        const dn=I[0][0]===-Infinity,up=I[I.length-1][1]===Infinity;
+        let sgn=0;
+        if(dn&&!up)sgn=-1;else if(up&&!dn)sgn=1;
+        else if(dn&&up&&pts.length>1){const d=pts[pts.length-1][1]-pts[pts.length-2][1];sgn=(toV(1)<toV(0))===(d<0)?1:-1;}
+        if(sgn)pts.push([uOf(a),vInf(sgn)]);
+      }
+    }
+    return pts;
+  };
   ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
-  const step=0.5;let pen=false,px=0,py=0;
-  for(let X=-2;X<=W+2;X+=step){
-    const x=wx(X),y=f(x,0,0);
-    if(!isFinite(y)){pen=false;continue;}
-    const Y=sy(y);
-    if(pen&&Math.abs(Y-sy(py))>30&&isDiscontinuous(f,px,x,py,y))pen=false;
-    if(pen)ctx.lineTo(X,CLAMP(Y));else ctx.moveTo(X,CLAMP(Y));
-    pen=true;px=x;py=y;
+  const bands=[];
+  const step=0.5,n=Math.ceil((U+4)/step);
+  let u0=-2,w0=toW(u0),y0=ev(w0),pen=false,poles=0;
+  if(isFinite(y0)){pt(u0,toV(y0),true);pen=true;}
+  for(let k=1;k<=n;k++){
+    const u1=-2+k*step,w1=toW(u1),y1=ev(w1),f0=isFinite(y0),f1=isFinite(y1);
+    const I=iv?iv(w0,w1):null;
+    let dense=false;
+    if(I&&I.length){
+      // dense = the range doesn't shrink when the step is split: many periods (or poles) per step
+      const e0=ext(I);
+      if(e0>2){
+        const Q=[0,1,2,3].map(q=>iv(w0+(w1-w0)*q/4,w0+(w1-w0)*(q+1)/4));
+        dense=unb(I)?Q.filter(unb).length>=2:Q.every(J=>ext(J)>0.5*e0);
+      }
+    }
+    if(dense){
+      for(const p of I){const a=clampV(toV(p[0])),b=clampV(toV(p[1]));bands.push(u0,u1,Math.min(a,b),Math.max(a,b));}
+      pen=false;
+    }else if(f0&&f1){
+      const v1=toV(y1);
+      if(unb(I)){
+        poles++;
+        let l=w0,r=w1;
+        for(let i=0;i<80;i++){const m=(l+r)/2;if(m===l||m===r)break;if(unb(iv(l,m)))r=m;else if(unb(iv(m,r)))l=m;else break;}
+        if(!pen)pt(u0,toV(y0),true);
+        for(const p of approach(w0,l))pt(p[0],p[1],false);
+        const rp=approach(w1,r).reverse();
+        if(rp.length){pt(rp[0][0],rp[0][1],true);for(let i=1;i<rp.length;i++)pt(rp[i][0],rp[i][1],false);pt(u1,v1,false);}
+        else pt(u1,v1,true);
+      }else if(pen&&Math.abs(v1-toV(y0))>30&&isDiscontinuous(ev,w0,w1,y0,y1))pt(u1,v1,true);
+      else pt(u1,v1,!pen);
+      pen=true;
+    }else if(f0){
+      if(!pen)pt(u0,toV(y0),true);
+      for(const p of edge(w0,w1))pt(p[0],p[1],false);
+      pen=false;
+    }else if(f1){
+      const pts=edge(w1,w0).reverse();
+      if(pts.length){pt(pts[0][0],pts[0][1],true);for(let i=1;i<pts.length;i++)pt(pts[i][0],pts[i][1],false);pt(u1,toV(y1),false);}
+      else pt(u1,toV(y1),true);
+      pen=true;
+    }else pen=false;
+    u0=u1;w0=w1;y0=y1;
   }
+  // asymptotes packed closer than ~12 px would paint a solid wall; keep the grid visible through it
+  const crowded=poles*12>U;
+  if(crowded)ctx.globalAlpha=.45;
   ctx.stroke();
-}
-function plotGy(g,color){
-  ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
-  const gf=(y)=>g(0,y,0);const f2=(y)=>gf(y);
-  let pen=false,py=0,px=0;
-  for(let Y=-2;Y<=H+2;Y+=0.5){
-    const y=wy(Y),x=gf(y);
-    if(!isFinite(x)){pen=false;continue;}
-    const X=sx(x);
-    if(pen&&Math.abs(X-sx(px))>30&&isDiscontinuous((u)=>f2(u),py,y,px,x))pen=false;
-    if(pen)ctx.lineTo(CLAMP(X),Y);else ctx.moveTo(CLAMP(X),Y);
-    pen=true;py=y;px=x;
+  ctx.globalAlpha=1;
+  if(bands.length){
+    ctx.fillStyle=color;
+    for(const thin of[true,false]){
+      ctx.globalAlpha=thin?1:.45;ctx.beginPath();
+      for(let i=0;i<bands.length;i+=4){
+        let a=bands[i+2],b=bands[i+3];if((b-a<LW)!==thin)continue;
+        if(thin){const c=(a+b)/2;a=c-LW/2;b=c+LW/2;}
+        const u=bands[i],du=bands[i+1]-u;
+        if(vert)ctx.rect(a,u,b-a,du);else ctx.rect(u,a,du,b-a);
+      }
+      ctx.fill();
+    }
+    ctx.globalAlpha=1;
   }
-  ctx.stroke();
 }
 function plotPolar(f,color){
   ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
@@ -1041,27 +1273,51 @@ function gridVals(F){
   for(let j=0;j<ny;j++){const y=wy(j*CELL);for(let i=0;i<nx;i++)v[j*nx+i]=F(wx(i*CELL),y);}
   return{nx,ny,v};
 }
+/* Marching squares. Each crossing sits on a grid edge with a numeric id; pieces sharing an
+   edge id are chained into polylines so a dash pattern runs evenly along the whole curve. */
 function contour(g,color,dashed){
   const{nx,ny,v}=g;
-  ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineCap='butt';ctx.beginPath();
-  const pts=[];
+  const segs=[];
+  const P=[];
   for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){
     const a=v[j*nx+i],b=v[j*nx+i+1],c=v[(j+1)*nx+i+1],d=v[(j+1)*nx+i];
     if(!(isFinite(a)&&isFinite(b)&&isFinite(c)&&isFinite(d)))continue;
     const sa=a>=0,sb=b>=0,sc=c>=0,sd=d>=0;
     if(sa===sb&&sb===sc&&sc===sd)continue;
-    pts.length=0;
-    if(sa!==sb)pts.push((i+a/(a-b))*CELL,j*CELL);
-    if(sb!==sc)pts.push((i+1)*CELL,(j+b/(b-c))*CELL);
-    if(sd!==sc)pts.push((i+d/(d-c))*CELL,(j+1)*CELL);
-    if(sa!==sd)pts.push(i*CELL,(j+a/(a-d))*CELL);
-    if(dashed&&pts.length===4){const k=Math.abs(pts[2]-pts[0])>=Math.abs(pts[3]-pts[1])?i:j;if(Math.floor(k/3)%2)continue;}
-    if(pts.length===4){ctx.moveTo(pts[0],pts[1]);ctx.lineTo(pts[2],pts[3]);}
-    else if(pts.length===8){const m=(a+b+c+d)/4;
-      if((m>=0)===sa){ctx.moveTo(pts[0],pts[1]);ctx.lineTo(pts[2],pts[3]);ctx.moveTo(pts[4],pts[5]);ctx.lineTo(pts[6],pts[7]);}
-      else{ctx.moveTo(pts[0],pts[1]);ctx.lineTo(pts[6],pts[7]);ctx.moveTo(pts[2],pts[3]);ctx.lineTo(pts[4],pts[5]);}}
+    P.length=0;
+    if(sa!==sb)P.push([(i+a/(a-b))*CELL,j*CELL,2*(j*nx+i)]);
+    if(sb!==sc)P.push([(i+1)*CELL,(j+b/(b-c))*CELL,2*(j*nx+i+1)+1]);
+    if(sd!==sc)P.push([(i+d/(d-c))*CELL,(j+1)*CELL,2*((j+1)*nx+i)]);
+    if(sa!==sd)P.push([i*CELL,(j+a/(a-d))*CELL,2*(j*nx+i)+1]);
+    if(P.length===2)segs.push(P[0],P[1]);
+    else if(P.length===4){
+      if(((a+b+c+d)/4>=0)===sa)segs.push(P[0],P[1],P[2],P[3]);
+      else segs.push(P[0],P[3],P[1],P[2]);
+    }
   }
-  ctx.stroke();ctx.lineCap='round';
+  const at=new Map();
+  for(let s=0;s<segs.length;s++){const k=segs[s][2],l=at.get(k);if(l)l.push(s);else at.set(k,[s]);}
+  const used=new Uint8Array(segs.length/2);
+  // from end point index `e`, keep following the piece that shares its edge
+  const walk=(e,out)=>{
+    for(;;){
+      const l=at.get(segs[e][2]);let nx2=-1;
+      if(l)for(const s of l){if(s!==e&&!used[s>>1]){nx2=s;break;}}
+      if(nx2<0)return;
+      used[nx2>>1]=1;const o=nx2^1;out.push(segs[o]);e=o;
+    }
+  };
+  ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineJoin='round';ctx.lineCap='round';
+  ctx.setLineDash(dashed?[7,9]:[]);ctx.beginPath();
+  for(let s=0;s<segs.length;s+=2){
+    if(used[s>>1])continue;used[s>>1]=1;
+    const fwd=[segs[s+1]],back=[];
+    walk(s+1,fwd);walk(s,back);
+    const line=back.reverse();line.push(segs[s]);for(const p of fwd)line.push(p);
+    ctx.moveTo(line[0][0],line[0][1]);
+    for(let i=1;i<line.length;i++)ctx.lineTo(line[i][0],line[i][1]);
+  }
+  ctx.stroke();ctx.setLineDash([]);
 }
 const off=document.createElement('canvas'),offc=off.getContext('2d');
 function hexRgb(h){const n=parseInt(h.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
@@ -1114,6 +1370,7 @@ function computePOI(e){
     for(let k=0;k<=N;k++)hs[k]=ys[k]-g(xs[k]);
     zerosOf(h,xs,hs,'Intersection',f,out);
   }
+  if(out.length>150)return[];
   out.sort((a,b)=>a.x-b.x);
   const res=[];for(const p of out){const q=res[res.length-1];if(q&&Math.abs(q.x-p.x)*V.s<2&&Math.abs(q.y-p.y)*V.s<2){if(p.t==='Intersection')res[res.length-1]=p;continue;}res.push(p);}
   return res.filter(p=>Math.abs(p.y)<1e15);
@@ -1134,8 +1391,8 @@ function drawNow(){
   for(const e of vis)if(e.kind==='region')try{plotRegion(e);}catch(x){}
   for(const e of vis){
     try{
-      if(e.kind==='fx')plotFx(e.f,e.color);
-      else if(e.kind==='gy')plotGy(e.f,e.color);
+      if(e.kind==='fx')plotCurve(e,false);
+      else if(e.kind==='gy')plotCurve(e,true);
       else if(e.kind==='polar')plotPolar(e.f,e.color);
       else if(e.kind==='implicit')contour(gridVals(e.pairs[0].F),e.color,false);
     }catch(x){}
@@ -1341,7 +1598,8 @@ function openMenu(){
     '<div class="opt"><span>Unit circle</span>'+sw('uc',s.uc)+'</div>'+
     '<div class="sec">Theme</div><div class="seg" data-seg="theme"><button data-v="auto" class="'+(s.theme==='auto'?'on':'')+'">Auto</button><button data-v="light" class="'+(s.theme==='light'?'on':'')+'">Light</button><button data-v="dark" class="'+(s.theme==='dark'?'on':'')+'">Dark</button></div>'+
     '<div class="sec">Graph</div><div class="act"><button data-a="img">Save image</button><button data-a="home">Reset view</button><button data-a="clear" class="danger">Clear all</button></div>'+
-    '<p class="hint">Tip: tap a curve to trace it and see intercepts, turning points and intersections. Pinch to zoom.</p>',
+    '<p class="hint">Tip: tap a curve to trace it and see intercepts, turning points and intersections. Pinch or scroll to zoom.</p>'+
+    '<p class="hint">Graphite v'+APP_VERSION+'</p>',
     b=>b.addEventListener('click',ev=>{
       const t=ev.target.closest('button');if(!t)return;
       if(t.dataset.ex!==undefined){loadExample(+t.dataset.ex);return;}
@@ -1490,8 +1748,10 @@ function openGuide(first){
     '<p><b>Add “= …”</b> – an expression with y needs an equals sign or inequality.</p>'+
     '<p><b>defined more than once</b> – two lines give the same letter a value. Delete or rename one.</p>'+
     '<p>While you’re still typing, messages show in grey. They turn red if the line is left unfinished.</p>')+
-  sec('Installing on your phone',
-    '<p>Open Graphite’s web address in Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens full screen from its own icon and works without internet after the first visit.</p>')+
+  sec('Installing it',
+    '<p><b>iPhone and iPad:</b> open Graphite’s web address in Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens full screen from its own icon and works without internet after the first visit.</p>'+
+    '<p><b>Android:</b> in Chrome, open the ⋮ menu and choose <b>Install app</b> or <b>Add to Home screen</b>.</p>'+
+    '<p><b>Computer:</b> just bookmark the page. In Chrome or Edge you can also click the install icon in the address bar to get it in its own window. Scroll to zoom, drag to move, and type straight away: pressing any key starts a new line. ↑ and ↓ move between lines.</p>')+
   '</div>';
   openSheet('Guide',html,b=>b.addEventListener('click',ev=>{
     const t=ev.target.closest('[data-gx]');if(!t)return;
