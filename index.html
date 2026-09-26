@@ -1,0 +1,1522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Graphite">
+<meta name="application-name" content="Graphite">
+<meta name="description" content="A lightweight graphing calculator for algebra, trig and calculus.">
+<meta name="theme-color" content="#16233a">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<title>Graphite</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=STIX+Two+Text:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f3f7f6; --card:#fcfefe; --ink:#16233a; --muted:#66788b; --rule:#d7e3e4;
+  --key:#e3eaec; --key-num:#ffffff; --key-fn:#d8e3ec; --key-press:#c4d2da;
+  --accent:#1f5fd6; --accent-ink:#ffffff; --err:#b3412e;
+  --g-bg:#fbfdfd; --g-minor:rgba(40,110,130,.10); --g-major:rgba(40,110,130,.24); --g-axis:rgba(22,35,58,.78); --g-label:#4f6477;
+  --shadow:0 1px 0 rgba(22,35,58,.10), 0 1px 2px rgba(22,35,58,.08);
+  --sb:#16233a;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#12171c; --card:#181e24; --ink:#e6edf2; --muted:#8b9aa8; --rule:#26303a;
+    --key:#232b33; --key-num:#2c3540; --key-fn:#1f2d3d; --key-press:#3a4654;
+    --accent:#7aa5ff; --accent-ink:#0d1520; --err:#ef8f7a;
+    --g-bg:#151b21; --g-minor:rgba(150,200,215,.07); --g-major:rgba(150,200,215,.17); --g-axis:rgba(230,237,242,.78); --g-label:#98a9b8;
+    --shadow:0 1px 0 rgba(0,0,0,.35);
+    --sb:#0e1216;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#12171c; --card:#181e24; --ink:#e6edf2; --muted:#8b9aa8; --rule:#26303a;
+  --key:#232b33; --key-num:#2c3540; --key-fn:#1f2d3d; --key-press:#3a4654;
+  --accent:#7aa5ff; --accent-ink:#0d1520; --err:#ef8f7a;
+  --g-bg:#151b21; --g-minor:rgba(150,200,215,.07); --g-major:rgba(150,200,215,.17); --g-axis:rgba(230,237,242,.78); --g-label:#98a9b8;
+  --shadow:0 1px 0 rgba(0,0,0,.35);
+  --sb:#0e1216;
+  color-scheme:dark;
+}
+html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%;overscroll-behavior:none;
+  background:linear-gradient(var(--sb),var(--sb)) top/100% env(safe-area-inset-top,0px) no-repeat,var(--paper)}
+*,*::before,*::after{box-sizing:border-box}
+body{height:100%;margin:0;background:var(--paper);color:var(--ink);
+  font-family:"Atkinson Hyperlegible",-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;
+  overflow:hidden;-webkit-tap-highlight-color:transparent;touch-action:manipulation;-webkit-user-select:none;user-select:none}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;touch-action:manipulation}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+#app{height:100%;display:grid;grid-template-rows:minmax(0,1fr) auto auto auto;
+  padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+#graphWrap{position:relative;min-height:0;background:var(--g-bg);overflow:hidden}
+#cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;display:block}
+#grip{height:18px;display:flex;align-items:center;justify-content:center;background:var(--card);
+  border-top:1px solid var(--rule);cursor:row-resize;touch-action:none}
+#grip::before{content:"";width:40px;height:4px;border-radius:2px;background:var(--rule)}
+#panel{background:var(--card);height:var(--ph,34vh);overflow-y:auto;overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
+body.kb #panel{height:min(var(--ph,34vh),26vh)}
+#keypad{display:none;background:var(--paper);border-top:1px solid var(--rule);padding:6px 5px 6px}
+body.kb #keypad{display:block}
+
+/* floating graph controls */
+.fab{position:absolute;display:flex;flex-direction:column;gap:6px;z-index:2}
+.fab.l{left:10px;top:10px}
+.fab.r{right:10px;top:10px}
+.fab button{width:40px;height:40px;border-radius:10px;background:var(--card);box-shadow:var(--shadow);
+  border:1px solid var(--rule);display:grid;place-items:center;font-size:20px;line-height:1}
+.fab button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round}
+#pills{position:absolute;left:10px;right:62px;bottom:10px;display:flex;flex-direction:column;gap:6px;align-items:flex-start;z-index:2;pointer-events:none}
+.pill{pointer-events:auto;background:var(--card);border:1px solid var(--rule);box-shadow:var(--shadow);border-radius:12px;
+  padding:7px 8px 7px 12px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:100%;font-size:14px}
+.pill .k{color:var(--muted)}
+.pill .mono{font-variant-numeric:tabular-nums}
+.pill .tg{border:1px solid var(--rule);border-radius:8px;padding:4px 9px;font-size:13px}
+.pill .tg.on{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.pill .x{width:26px;height:26px;border-radius:8px;display:grid;place-items:center;color:var(--muted);font-size:18px}
+
+/* expression list */
+.ex{display:grid;grid-template-columns:44px minmax(0,1fr) 40px;border-bottom:1px solid var(--rule);min-height:56px;background:var(--card)}
+.ex.focus{box-shadow:inset 3px 0 0 var(--accent)}
+.gut{display:flex;align-items:flex-start;justify-content:center;padding-top:15px;border-right:1px solid var(--rule);background:var(--paper)}
+.sw{width:24px;height:24px;border-radius:50%;border:2.5px solid var(--c);background:var(--c);display:grid;place-items:center;font-size:11px;color:var(--muted)}
+.sw.off{background:transparent}
+.sw.nop{border-color:transparent;background:transparent}
+.body{min-width:0;padding:6px 4px 6px 10px;cursor:text}
+.more{color:var(--muted);font-size:20px;display:flex;align-items:flex-start;justify-content:center;padding-top:14px}
+.math{overflow-x:auto;overflow-y:hidden;padding:4px 2px;scrollbar-width:none;min-height:40px;display:flex;align-items:center}
+.math::-webkit-scrollbar{display:none}
+.ph{color:var(--muted);font-size:15px}
+.extra{font-size:13.5px;color:var(--muted);display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.extra:empty{display:none}
+.extra .val{color:var(--ink);font-family:"STIX Two Text",serif;font-size:18px}
+.extra .err{color:var(--err)}
+.focus .extra .err{color:var(--muted)}
+.chip{border:1px solid var(--rule);background:var(--paper);border-radius:8px;padding:4px 10px;font-family:"STIX Two Text",serif;font-style:italic;font-size:16px;color:var(--ink)}
+.chip.all{font-style:normal;font-family:inherit;font-size:13px}
+.addrow{display:block;width:100%;text-align:left;padding:16px 16px 16px 56px;color:var(--muted)}
+
+/* slider */
+.sl{display:grid;grid-template-columns:34px 46px minmax(0,1fr) 46px;gap:6px;align-items:center;width:100%;padding:2px 0 4px}
+.sl .play{width:34px;height:34px;border-radius:50%;border:1px solid var(--rule);display:grid;place-items:center;color:var(--ink)}
+.sl .play svg{width:14px;height:14px;fill:currentColor}
+.sl input.b{width:100%;border:1px solid var(--rule);border-radius:7px;background:var(--paper);color:var(--ink);
+  font:inherit;font-size:13px;padding:5px 4px;text-align:center;-webkit-user-select:text;user-select:text}
+input[type=range]{-webkit-appearance:none;appearance:none;width:100%;height:34px;background:transparent;margin:0}
+input[type=range]::-webkit-slider-runnable-track{height:4px;border-radius:2px;background:var(--rule)}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:24px;height:24px;border-radius:50%;margin-top:-10px;background:var(--c,var(--accent));border:3px solid var(--card);box-shadow:0 0 0 1px var(--rule)}
+input[type=range]::-moz-range-track{height:4px;border-radius:2px;background:var(--rule)}
+input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:var(--c,var(--accent));border:3px solid var(--card)}
+
+/* typeset math */
+.m{font-family:"STIX Two Text","Times New Roman",serif;font-size:22px;line-height:1.3;color:var(--ink);white-space:nowrap}
+.row{display:inline-flex;align-items:center;min-height:1.3em}
+.row.empty:not(.top){min-width:.62em;height:1.05em;min-height:0;border:1px dashed var(--muted);border-radius:3px;margin:0 .06em;opacity:.75}
+.ch{display:inline-block}
+.v{font-style:italic;padding:0 .03em}
+.o{padding:0 .2em}
+.p{padding-right:.22em}
+.fn{padding-right:.06em}
+.frac{display:inline-flex;flex-direction:column;align-items:center;margin:0 .1em}
+.frac>.row:first-child{border-bottom:.06em solid currentColor;padding:0 .16em .04em;align-self:stretch;justify-content:center}
+.frac>.row:last-child{padding:.04em .16em 0;justify-content:center}
+.frac .frac{font-size:.88em}
+.sup{align-self:center;font-size:.68em;position:relative;top:-.6em;margin-left:.03em}
+.sub{align-self:flex-end;font-size:.68em;position:relative;top:.18em}
+.sup .row,.sub .row{min-height:0}
+.grp,.logb,.deriv{display:inline-flex;align-items:center}
+.dl{display:inline-block;line-height:1.3;font-style:normal;transform-origin:center}
+.sqrt{display:inline-flex;align-items:stretch;margin:0 .04em}
+.sqrt .idx{align-self:flex-start;font-size:.58em;margin-right:-.42em;position:relative;top:.05em;z-index:1}
+.radsvg{width:.55em;flex:none;fill:none;stroke:currentColor;stroke-width:1.4px;stroke-linejoin:round;stroke-linecap:round;overflow:visible;margin-top:.05em}
+.rarg{border-top:.065em solid currentColor;margin-top:.05em;padding:.06em .1em 0 .06em;display:inline-flex;align-items:center}
+.sqrt .idx+.radsvg{margin-left:0}
+.cur{display:inline-block;width:2px;height:1.12em;background:var(--accent);margin:0 -1px;animation:blink 1.05s steps(1) infinite;align-self:center;flex:none}
+@keyframes blink{50%{opacity:0}}
+@media (prefers-reduced-motion: reduce){.cur{animation:none}}
+
+/* keypad */
+.kp{display:grid;gap:5px}
+.kp.c8{grid-template-columns:repeat(8,minmax(0,1fr))}
+.kp.c10{grid-template-columns:repeat(10,minmax(0,1fr))}
+.kp+.kp{margin-top:5px}
+.kp button{height:44px;border-radius:9px;background:var(--key);box-shadow:0 1px 0 rgba(0,0,0,.12);display:grid;place-items:center;
+  font-size:17px;white-space:nowrap;overflow:hidden;transition:background .06s}
+.kp button.n{background:var(--key-num);font-size:19px}
+.kp button.f{background:var(--key-fn);font-size:14.5px}
+.kp button.mt{font-family:"STIX Two Text",serif;font-size:20px}
+.kp button.mt i{font-style:italic}
+.kp button.ac{background:var(--accent);color:var(--accent-ink)}
+.kp button.down{background:var(--key-press)}
+.kp button.ac.down{filter:brightness(.88)}
+.kp button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ctl{display:grid;grid-template-columns:1.25fr 1.25fr 1fr 1fr 1.2fr 1.2fr 1fr;gap:5px;margin-top:5px}
+.ctl button{height:44px}
+.kfrac{display:inline-flex;flex-direction:column;align-items:center;font-size:.72em;line-height:1.05}
+.kfrac span:first-child{border-bottom:1px solid currentColor;padding:0 2px}
+
+/* sheets */
+#sheet{position:fixed;inset:0;z-index:10;display:none;background:rgba(10,18,28,.38)}
+#sheet.open{display:block}
+#sheet .box{position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow:auto;background:var(--card);
+  border-radius:16px 16px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 30px rgba(0,0,0,.2)}
+@media (min-width:760px){#sheet .box{left:50%;right:auto;width:460px;transform:translateX(-50%);bottom:auto;top:10%;border-radius:16px}}
+.sh-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.sh-h h2{font-size:19px;margin:0;font-weight:700}
+.sh-h button{width:34px;height:34px;border-radius:9px;font-size:22px;color:var(--muted)}
+.sec{margin:14px 0 6px;color:var(--muted);font-size:13.5px}
+.seg{display:flex;border:1px solid var(--rule);border-radius:10px;overflow:hidden}
+.seg button{flex:1;padding:9px 6px;font-size:14px}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+.opt{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--rule)}
+.opt:last-child{border-bottom:0}
+.sw2{width:46px;height:28px;border-radius:14px;background:var(--rule);position:relative;flex:none}
+.sw2::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:var(--card);box-shadow:var(--shadow);transition:left .12s}
+.sw2.on{background:var(--accent)}
+.sw2.on::after{left:21px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.card-btn{border:1px solid var(--rule);border-radius:11px;padding:10px 12px;text-align:left;background:var(--paper)}
+.card-btn b{display:block;font-size:14.5px}
+.card-btn span{font-size:12.5px;color:var(--muted)}
+.act{display:flex;gap:8px;flex-wrap:wrap}
+.act button{border:1px solid var(--rule);border-radius:10px;padding:10px 14px;background:var(--paper)}
+.act button.danger{color:var(--err)}
+.colors{display:flex;gap:10px;flex-wrap:wrap}
+.colors button{width:36px;height:36px;border-radius:50%;background:var(--c);border:3px solid var(--card);box-shadow:0 0 0 1px var(--rule)}
+.colors button.on{box-shadow:0 0 0 2.5px var(--ink)}
+table.tv{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;margin-top:8px}
+table.tv th,table.tv td{border-bottom:1px solid var(--rule);padding:7px 8px;text-align:right}
+table.tv th{color:var(--muted);font-weight:400;font-family:"STIX Two Text",serif;font-style:italic;font-size:17px}
+.tin{display:flex;gap:10px}
+.tin label{flex:1;font-size:13px;color:var(--muted)}
+.tin input{display:block;width:100%;margin-top:4px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;padding:8px;-webkit-user-select:text;user-select:text}
+.shot{width:100%;border-radius:10px;border:1px solid var(--rule);-webkit-user-select:auto;user-select:auto;-webkit-touch-callout:default}
+.hint{font-size:13px;color:var(--muted);margin:8px 0 0}
+#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:5;max-width:calc(100% - 130px);
+  background:var(--ink);color:var(--card);border-radius:12px;padding:10px 12px 10px 16px;display:none;align-items:center;gap:14px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
+#toast.show{display:flex}
+#toast button{color:var(--accent);font-weight:700;padding:4px 6px;filter:brightness(1.3)}
+
+/* guide */
+.guide details{border-bottom:1px solid var(--rule)}
+.guide summary{list-style:none;padding:13px 2px;font-weight:700;font-size:16px;display:flex;justify-content:space-between;align-items:center;cursor:pointer}
+.guide summary::-webkit-details-marker{display:none}
+.guide summary::after{content:"+";color:var(--muted);font-weight:400;font-size:22px;line-height:1}
+.guide details[open] summary::after{content:"−"}
+.guide .gb{padding:0 2px 14px;line-height:1.5;font-size:14.5px}
+.guide .gb p{margin:0 0 10px}
+.guide .gb p:last-child{margin-bottom:0}
+.guide .lead{font-size:15px;line-height:1.5;margin:0 0 6px;color:var(--muted)}
+.gx{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;margin:6px 0;border:1px solid var(--rule);border-radius:10px;background:var(--paper)}
+.gx .m{font-size:19px}
+.gx .d{font-size:12.5px;color:var(--muted);display:block;margin-top:2px}
+.gx button{flex:none;border:1px solid var(--rule);border-radius:8px;padding:6px 10px;font-size:13px;background:var(--card)}
+.gk{display:grid;grid-template-columns:52px 1fr;gap:6px 10px;align-items:center;margin:6px 0 10px}
+.gk b{display:grid;place-items:center;height:34px;border-radius:8px;background:var(--key);font-weight:400;font-family:"STIX Two Text",serif;font-size:17px}
+.gk b.s{font-family:inherit;font-size:13px}
+.gk span{font-size:14px}
+.gk svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.menu-top{display:flex;gap:8px;margin-bottom:4px}
+.menu-top button{flex:1;border:1px solid var(--rule);border-radius:11px;padding:11px;background:var(--paper);font-weight:700}
+
+/* wide screens: list + keypad on the left, graph on the right */
+@media (min-width:760px){
+  #app{grid-template-columns:min(390px,42vw) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;}
+  #graphWrap{grid-column:2;grid-row:1 / span 2}
+  #grip{display:none}
+  #panel{grid-column:1;grid-row:1;height:auto;border-right:1px solid var(--rule)}
+  body.kb #panel{height:auto}
+  #keypad{grid-column:1;grid-row:2;border-right:1px solid var(--rule)}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="graphWrap">
+    <canvas id="cv" aria-label="Graph"></canvas>
+    <div class="fab l"><button id="menuBtn" aria-label="Menu"><svg viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><button id="helpBtn" aria-label="Guide"><svg viewBox="0 0 24 24"><path d="M9.2 9a3 3 0 1 1 4.3 2.7c-.9.4-1.5 1.2-1.5 2.2v.6"/><path d="M12 18h.01" stroke-width="2.6"/></svg></button></div>
+    <div class="fab r">
+      <button id="zin" aria-label="Zoom in"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+      <button id="zout" aria-label="Zoom out"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+      <button id="zhome" aria-label="Reset view"><svg viewBox="0 0 24 24"><path d="M4 11l8-6 8 6M6 10v9h12v-9"/></svg></button>
+    </div>
+    <div id="pills"></div>
+  </div>
+  <div id="grip" aria-hidden="true"></div>
+  <div id="panel"><div id="list"></div></div>
+  <div id="keypad"></div>
+</div>
+<div id="sheet"><div class="box" id="sheetBox"></div></div>
+<div id="toast"><span id="toastMsg"></span><button id="toastBtn">Undo</button></div>
+
+<script>
+'use strict';
+/* =========================================================
+   Graphite — lightweight grapher
+   ========================================================= */
+const PALETTE=['#c74440','#2d70b3','#388c46','#6042a6','#e07b16','#c2417a','#12889a','#6b6b6b'];
+const $=s=>document.querySelector(s);
+
+/* ---------------- expression tree ---------------- */
+const R=(items=[])=>({items});
+const C=v=>({t:'c',v});
+function slotsOf(n){switch(n.t){case 'frac':return[n.n,n.d];case 'root':return[n.i,n.a];case 'logb':return[n.b,n.a];case 'c':case 'f':return[];default:return[n.a];}}
+function link(row,pn=null,pr=null){row._pn=pn;row._pr=pr;for(const it of row.items)for(const s of slotsOf(it))link(s,it,row);return row;}
+const ser=t=>JSON.stringify(t,(k,v)=>k[0]==='_'?undefined:v);
+const cloneTree=t=>link(JSON.parse(ser(t)));
+
+/* mini TeX-ish -> tree, for examples and slider values */
+function fromTex(s){
+  let i=0;
+  const group=()=>{if(s[i]==='{'){i++;const r=rowUntil('}');i++;return r;}const r=R();const it=single();if(it)r.items.push(it);return r;};
+  function rowUntil(stop){const r=R();while(i<s.length&&!(stop&&s.startsWith(stop,i))){const it=single();if(it)r.items.push(it);}return r;}
+  function single(){
+    const c=s[i];
+    if(c===' '){i++;return null;}
+    if(c==='\\'){
+      let j=i+1;while(j<s.length&&/[a-zA-Z]/.test(s[j]))j++;
+      const name=s.slice(i+1,j);
+      if(!name){const sym=s[j];i=j+1;if(sym==='{'){const a=rowUntil('\\}');i+=2;return{t:'brace',a};}return C(sym);}
+      i=j;
+      switch(name){
+        case 'frac':{const n=group(),d=group();return{t:'frac',n,d};}
+        case 'sqrt':{if(s[i]==='['){i++;const ix=rowUntil(']');i++;return{t:'root',i:ix,a:group()};}return{t:'sqrt',a:group()};}
+        case 'pi':return C('π');case 'theta':return C('θ');case 'le':return C('≤');case 'ge':return C('≥');
+        case 'cdot':case 'times':return C('×');
+        case 'abs':return{t:'abs',a:group()};
+        case 'deriv':return{t:'deriv',a:group()};
+        case 'logb':{const b=group(),a=group();return{t:'logb',b,a};}
+        default:return{t:'f',v:name};
+      }
+    }
+    if(c==='^'){i++;return{t:'pow',a:group()};}
+    if(c==='('){i++;const a=rowUntil(')');i++;return{t:'paren',a};}
+    i++;
+    if(c==='-')return C('−');if(c==='*')return C('×');
+    return C(c);
+  }
+  return link(rowUntil(null));
+}
+
+/* ---------------- tree -> string -> AST ---------------- */
+const CHMAP={'−':'-','×':'*','≤':'<=','≥':'>=','π':' @pi '};
+function toStr(row){let s='';for(const it of row.items)s+=itemStr(it);return s;}
+function itemStr(it){switch(it.t){
+  case 'c':return CHMAP[it.v]??it.v;
+  case 'f':return' @'+it.v+' ';
+  case 'paren':return'('+toStr(it.a)+')';
+  case 'abs':return' @abs('+toStr(it.a)+')';
+  case 'brace':return'{'+toStr(it.a)+'}';
+  case 'frac':return'(('+toStr(it.n)+')/('+toStr(it.d)+'))';
+  case 'pow':return'^('+toStr(it.a)+')';
+  case 'sqrt':return' @sqrt('+toStr(it.a)+')';
+  case 'root':return' @root('+toStr(it.i)+','+toStr(it.a)+')';
+  case 'logb':return' @logb('+toStr(it.b)+','+toStr(it.a)+')';
+  case 'deriv':return' @deriv('+toStr(it.a)+')';
+}return'';}
+
+class MathErr extends Error{}
+const err=m=>new MathErr(m);
+function tokenize(s){
+  const T=[];let i=0;
+  while(i<s.length){
+    const c=s[i];
+    if(c===' '){i++;continue;}
+    if(/[0-9.]/.test(c)){let j=i;while(j<s.length&&/[0-9.]/.test(s[j]))j++;const t=s.slice(i,j);
+      if(t==='.'||(t.match(/\./g)||[]).length>1)throw err('“'+t+'” isn’t a valid number');T.push({k:'num',v:parseFloat(t)});i=j;continue;}
+    if(c==='@'){let j=i+1;while(j<s.length&&/[a-z0-9]/i.test(s[j]))j++;T.push({k:'fn',v:s.slice(i+1,j)});i=j;continue;}
+    if(/[a-zA-Zθ]/.test(c)){T.push({k:'id',v:c});i++;continue;}
+    if(c==='<'||c==='>'){if(s[i+1]==='='){T.push({k:'rel',v:c+'='});i+=2;}else{T.push({k:'rel',v:c});i++;}continue;}
+    if(c==='='){T.push({k:'rel',v:'='});i++;continue;}
+    if('+-*/^(),:{}'.includes(c)){T.push({k:c});i++;continue;}
+    throw err('Unexpected “'+c+'”');
+  }
+  T.push({k:'end'});return T;
+}
+const FN_ARGS={root:2,logb:2};
+const TRIG=new Set(['sin','cos','tan','csc','sec','cot']);
+function parse(s){
+  const T=tokenize(s);let p=0;
+  const peek=()=>T[p],next=()=>T[p++];
+  const expect=k=>{if(T[p].k!==k){if(k===')')throw err('Missing a closing bracket');if(k==='}')throw err('Missing a closing brace');throw err('Expected “'+k+'”');}return T[p++];};
+  const startsAtom=t=>t.k==='num'||t.k==='id'||t.k==='fn'||t.k==='('||t.k==='{';
+  function top(){
+    if(peek().k==='end')return null;
+    let node=expr();
+    if(peek().k==='rel'){const terms=[node],ops=[];while(peek().k==='rel'){ops.push(next().v);terms.push(expr());}node={k:'rel',ops,terms};}
+    if(peek().k!=='end'){const t=peek();if(t.k===')')throw err('Extra closing bracket');if(t.k===',')throw err('Commas only go inside brackets');throw err('Unexpected “'+(t.v??t.k)+'”');}
+    return node;
+  }
+  function expr(){let a=term();for(;;){const t=peek().k;if(t==='+'||t==='-'){next();a={k:'bin',op:t,a,b:term()};}else return a;}}
+  function term(){let a=unary();for(;;){const t=peek();if(t.k==='*'||t.k==='/'){next();a={k:'bin',op:t.k,a,b:unary()};}else if(startsAtom(t)){a={k:'bin',op:'*',a,b:power()};}else return a;}}
+  function unary(){const t=peek().k;if(t==='-'){next();return{k:'neg',a:unary()};}if(t==='+'){next();return unary();}return power();}
+  function power(){const b=atom();if(peek().k==='^'){next();return{k:'bin',op:'^',a:b,b:unary()};}return b;}
+  function atom(){
+    const t=next();
+    switch(t.k){
+      case 'num':return{k:'num',v:t.v,lit:true};
+      case 'id':return t.v==='e'?{k:'num',v:Math.E}:{k:'var',n:t.v};
+      case '(':{if(peek().k===')')throw err('Empty brackets');const a=expr();if(peek().k===','){next();const b=expr();expect(')');return{k:'point',a,b};}expect(')');return a;}
+      case '{':return piece();
+      case 'fn':return call(t.v);
+      case 'end':throw err('Unfinished expression');
+      case 'rel':throw err('Something is missing before “'+t.v+'”');
+      default:throw err('Something is missing before “'+t.k+'”');
+    }
+  }
+  function call(name){
+    if(name==='pi')return{k:'num',v:Math.PI};
+    if(!(name in FN))throw err('Unknown function “'+name+'”');
+    let ex=null;
+    if(peek().k==='^'){next();ex=unary();}
+    let args;
+    if(peek().k==='('){next();if(peek().k===')')throw err('Give '+name+' an input');args=[expr()];while(peek().k===','){next();args.push(expr());}expect(')');}
+    else{if(!startsAtom(peek())&&peek().k!=='-')throw err('Give '+name+' an input');args=[unary()];}
+    const need=FN_ARGS[name]||1;
+    if(args.length!==need)throw err(name+' takes '+need+' input'+(need>1?'s':''));
+    if(ex&&TRIG.has(name)&&ex.k==='neg'&&ex.a.k==='num'&&ex.a.v===1&&['sin','cos','tan'].includes(name)){name='a'+name;ex=null;}
+    let node={k:'call',f:name,args};
+    if(ex)node={k:'bin',op:'^',a:node,b:ex};
+    return node;
+  }
+  function relChain(){const a=expr();if(peek().k!=='rel')return{rel:false,node:a};const terms=[a],ops=[];while(peek().k==='rel'){ops.push(next().v);terms.push(expr());}return{rel:true,node:{k:'rel',ops,terms}};}
+  function piece(){
+    const cases=[];let def=null;
+    if(peek().k==='}')throw err('Empty braces');
+    for(;;){
+      const c=relChain();
+      if(peek().k===':'){next();if(!c.rel)throw err('Put a condition before “:”');cases.push({cond:c.node,val:expr()});}
+      else if(c.rel)cases.push({cond:c.node,val:null});
+      else{if(def)throw err('Only one “otherwise” value allowed');def=c.node;}
+      if(peek().k===','){next();continue;}
+      expect('}');break;
+    }
+    return{k:'piece',cases,def};
+  }
+  return top();
+}
+
+/* ---------------- evaluation ---------------- */
+let ANG=1; // 1 = radians, π/180 = degrees
+const VALS=Object.create(null);
+function rpow(a,b){
+  if(a>=0||Number.isInteger(b))return Math.pow(a,b);
+  for(let q=1;q<=64;q++){const p=Math.round(b*q);if(Math.abs(p/q-b)<1e-9){if(q%2===0)return NaN;const r=Math.pow(-a,b);return(p%2!==0)?-r:r;}}
+  return NaN;
+}
+const FN={
+  sin:v=>Math.sin(v*ANG),cos:v=>Math.cos(v*ANG),tan:v=>Math.tan(v*ANG),
+  csc:v=>1/Math.sin(v*ANG),sec:v=>1/Math.cos(v*ANG),cot:v=>Math.cos(v*ANG)/Math.sin(v*ANG),
+  asin:v=>Math.asin(v)/ANG,acos:v=>Math.acos(v)/ANG,atan:v=>Math.atan(v)/ANG,
+  sinh:Math.sinh,cosh:Math.cosh,tanh:Math.tanh,
+  ln:Math.log,log:Math.log10,exp:Math.exp,sqrt:Math.sqrt,abs:Math.abs,floor:Math.floor,
+  root:(n,a)=>(a<0&&Number.isInteger(n)&&Math.abs(n)%2===1)?-Math.pow(-a,1/n):Math.pow(a,1/n),
+  logb:(b,a)=>Math.log(a)/Math.log(b),
+  deriv:null
+};
+function cmp(op,a,b){switch(op){case '<':return a<b;case '>':return a>b;case '<=':return a<=b;case '>=':return a>=b;case '=':return Math.abs(a-b)<=1e-9*Math.max(1,Math.abs(a),Math.abs(b));}return false;}
+function compile(n){
+  switch(n.k){
+    case 'num':{const v=n.v;return()=>v;}
+    case 'var':{const nm=n.n;
+      if(nm==='x')return x=>x;if(nm==='y')return(x,y)=>y;if(nm==='θ')return(x,y,t)=>t;
+      return()=>{const v=VALS[nm];return v===undefined?NaN:v;};}
+    case 'neg':{const a=compile(n.a);return(x,y,t)=>-a(x,y,t);}
+    case 'bin':{const a=compile(n.a),b=compile(n.b);
+      switch(n.op){
+        case '+':return(x,y,t)=>a(x,y,t)+b(x,y,t);
+        case '-':return(x,y,t)=>a(x,y,t)-b(x,y,t);
+        case '*':return(x,y,t)=>a(x,y,t)*b(x,y,t);
+        case '/':return(x,y,t)=>a(x,y,t)/b(x,y,t);
+        case '^':return(x,y,t)=>rpow(a(x,y,t),b(x,y,t));
+      }break;}
+    case 'call':{
+      const args=n.args.map(compile);
+      if(n.f==='deriv'){const g=args[0];return(x,y,t)=>{const h=1e-4*Math.max(1,Math.abs(x));return(g(x+h,y,t)-g(x-h,y,t))/(2*h);};}
+      const f=FN[n.f];
+      if(args.length===1){const a=args[0];return(x,y,t)=>f(a(x,y,t));}
+      const[a,b]=args;return(x,y,t)=>f(a(x,y,t),b(x,y,t));}
+    case 'piece':{
+      const cs=n.cases.map(c=>({c:compileRel(c.cond),v:c.val?compile(c.val):null}));
+      const d=n.def?compile(n.def):null;
+      return(x,y,t)=>{for(const k of cs){if(k.c(x,y,t))return k.v?k.v(x,y,t):1;}return d?d(x,y,t):NaN;};}
+    case 'point':throw err('Points (a, b) can only be plotted on their own line');
+    case 'rel':throw err('Comparisons belong inside { } here');
+  }
+  throw err('Can’t read this expression');
+}
+function compileRel(n){const fs=n.terms.map(compile),ops=n.ops;return(x,y,t)=>{let a=fs[0](x,y,t);for(let i=0;i<ops.length;i++){const b=fs[i+1](x,y,t);if(!cmp(ops[i],a,b))return false;a=b;}return true;};}
+function varsOf(n,set=new Set()){
+  if(!n)return set;
+  switch(n.k){
+    case 'var':set.add(n.n);break;
+    case 'neg':varsOf(n.a,set);break;
+    case 'bin':case 'point':varsOf(n.a,set);varsOf(n.b,set);break;
+    case 'call':n.args.forEach(a=>varsOf(a,set));break;
+    case 'rel':n.terms.forEach(a=>varsOf(a,set));break;
+    case 'piece':n.cases.forEach(c=>{varsOf(c.cond,set);if(c.val)varsOf(c.val,set);});if(n.def)varsOf(n.def,set);break;
+  }
+  return set;
+}
+const isVar=(n,name)=>n&&n.k==='var'&&n.n===name;
+const numLit=n=>n.k==='num'&&n.lit?n.v:(n.k==='neg'&&n.a.k==='num'&&n.a.lit?-n.a.v:null);
+
+/* ---------------- state ---------------- */
+const KEY='graphite-v1';
+let S;
+function defaultState(){
+  return{exprs:[],view:null,set:{deg:false,pi:false,grid:true,uc:false,theme:'auto'},uc:Math.PI/6,nid:1,ci:0,ph:null};
+}
+function newExpr(tex,opts={}){
+  const e={id:S.nid++,tree:tex?fromTex(tex):R(),color:opts.color||PALETTE[S.ci++%PALETTE.length],hidden:false};
+  if(!e.tree._pn)link(e.tree);
+  if(opts.slider)e.slider={min:opts.slider[0],max:opts.slider[1]};
+  return e;
+}
+let FIRST_RUN=false;
+function loadState(){
+  S=defaultState();FIRST_RUN=true;
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw){FIRST_RUN=false;const d=JSON.parse(raw);Object.assign(S,d);S.set=Object.assign(defaultState().set,d.set||{});S.exprs=(d.exprs||[]).map(e=>{e.tree=link(e.tree);return e;});return;}
+  }catch(e){}
+  S.exprs=[newExpr('y=a\\sin(bx)'),newExpr('a=2',{slider:[-10,10]}),newExpr('b=1',{slider:[-10,10]}),newExpr('\\frac{x^2}{36}+\\frac{y^2}{9}=1')];
+}
+let saveT=0;
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify({exprs:S.exprs.map(e=>({id:e.id,tree:JSON.parse(ser(e.tree)),color:e.color,hidden:e.hidden,slider:e.slider})),view:V,set:S.set,uc:S.uc,nid:S.nid,ci:S.ci,ph:S.ph}));}catch(e){}},250);}
+const snapshot=()=>JSON.stringify({exprs:S.exprs.map(e=>({id:e.id,tree:JSON.parse(ser(e.tree)),color:e.color,hidden:e.hidden,slider:e.slider})),ci:S.ci});
+function restore(snap){const d=JSON.parse(snap);S.exprs=d.exprs.map(e=>{e.tree=link(e.tree);return e;});S.ci=d.ci;focus=null;sel=null;trace=null;setKb(false);refresh();}
+
+/* ---------------- analysis ---------------- */
+const RESERVED=new Set(['x','y','θ']);
+let defOrder=[];
+function analyze(){
+  for(const k in VALS)delete VALS[k];
+  const defs=new Map();
+  for(const e of S.exprs){
+    e.kind='empty';e.err=null;e.ast=null;e.missing=null;e.f=null;e.defName=null;
+    if(!e.tree.items.length)continue;
+    try{e.ast=parse(toStr(e.tree));}catch(ex){e.kind='error';e.err=ex instanceof MathErr?ex.message:'Can’t read this expression';continue;}
+    if(!e.ast){continue;}
+    const a=e.ast;
+    if(a.k==='rel'&&a.ops.length===1&&a.ops[0]==='='&&a.terms[0].k==='var'&&!RESERVED.has(a.terms[0].n)){
+      const name=a.terms[0].n,rv=varsOf(a.terms[1]);
+      const polar=name==='r'&&rv.has('θ');
+      if(!polar&&!rv.has('x')&&!rv.has('y')&&!rv.has('θ')&&!rv.has(name)){
+        if(defs.has(name)){e.kind='error';e.err='“'+name+'” is defined more than once';const o=defs.get(name);o.kind='error';o.err=e.err;continue;}
+        e.defName=name;e.kind=numLit(a.terms[1])!==null?'slider':'def';defs.set(name,e);continue;
+      }
+    }
+  }
+  // evaluate definitions (sliders first, then dependent ones)
+  defOrder=[];
+  for(const [n,e] of defs){if(e.kind==='slider'){VALS[n]=numLit(e.ast.terms[1]);e.value=VALS[n];}}
+  let pending=[...defs.values()].filter(e=>e.kind==='def');
+  for(let pass=0;pass<pending.length+1&&pending.length;pass++){
+    const rest=[];
+    for(const e of pending){
+      const need=[...varsOf(e.ast.terms[1])];
+      if(need.every(v=>v in VALS)){try{e.f=compile(e.ast.terms[1]);e.value=e.f(0,0,0);VALS[e.defName]=e.value;defOrder.push(e);}catch(ex){e.kind='error';e.err=ex.message;}}
+      else rest.push(e);
+    }
+    if(rest.length===pending.length)break;pending=rest;
+  }
+  for(const e of pending){const miss=[...varsOf(e.ast.terms[1])].filter(v=>!defs.has(v));if(miss.length){e.kind='missing';e.missing=miss;}else{e.kind='error';e.err='These definitions depend on each other in a loop';}}
+  // classify the rest
+  for(const e of S.exprs){
+    if(!e.ast||e.kind!=='empty')continue;
+    const a=e.ast;
+    try{
+      const vs=varsOf(a);
+      const polar=a.k==='rel'&&a.ops.length===1&&a.ops[0]==='='&&isVar(a.terms[0],'r')&&varsOf(a.terms[1]).has('θ');
+      const free=[...vs].filter(v=>!RESERVED.has(v)&&!defs.has(v)&&!(polar&&v==='r'));
+      if(free.length){e.kind='missing';e.missing=free;continue;}
+      if(a.k==='point'){e.kind='point';e.px=compile(a.a);e.py=compile(a.b);continue;}
+      if(a.k!=='rel'){
+        if(vs.has('y'))throw err('Add “= …” to make this an equation');
+        if(vs.has('θ'))throw err('Use θ in a polar equation, like r = 2 + sin(θ)');
+        e.f=compile(a);
+        if(vs.has('x')){e.kind='fx';}else{e.kind='value';}
+        continue;
+      }
+      if(vs.has('θ')&&!polar)throw err('θ only works in r = … (polar)');
+      const eq=a.ops.every(o=>o==='='),ineq=a.ops.every(o=>o!=='=');
+      if(!eq&&!ineq)throw err('Mix of = and inequalities isn’t supported');
+      if(eq&&a.ops.length>1)throw err('Use only one “=”');
+      if(polar){e.kind='polar';e.f=compile(a.terms[1]);continue;}
+      if(!vs.has('x')&&!vs.has('y')){e.kind='value';e.f=null;e.boolv=compileRel(a)(0,0,0);continue;}
+      const[L,Rt]=a.terms;
+      if(eq){
+        const lv=varsOf(L),rv=varsOf(Rt);
+        if(isVar(L,'y')&&!rv.has('y')){e.kind='fx';e.f=compile(Rt);continue;}
+        if(isVar(Rt,'y')&&!lv.has('y')){e.kind='fx';e.f=compile(L);continue;}
+        if(isVar(L,'x')&&!rv.has('x')){e.kind='gy';e.f=compile(Rt);continue;}
+        if(isVar(Rt,'x')&&!lv.has('x')){e.kind='gy';e.f=compile(L);continue;}
+        const l=compile(L),r=compile(Rt);
+        e.kind='implicit';e.pairs=[{F:(x,y)=>l(x,y,0)-r(x,y,0),strict:false}];continue;
+      }
+      const fs=a.terms.map(compile);
+      e.kind='region';e.pairs=a.ops.map((op,i)=>({F:(x,y)=>fs[i](x,y,0)-fs[i+1](x,y,0),op,strict:op==='<'||op==='>'}));
+    }catch(ex){e.kind='error';e.err=ex instanceof MathErr?ex.message:'Can’t read this expression';}
+  }
+}
+function recomputeDefs(){for(const e of defOrder){try{e.value=e.f(0,0,0);VALS[e.defName]=e.value;}catch(x){}}}
+
+/* ---------------- number formatting ---------------- */
+const SUPD={'-':'⁻','0':'⁰','1':'¹','2':'²','3':'³','4':'⁴','5':'⁵','6':'⁶','7':'⁷','8':'⁸','9':'⁹'};
+function fmt(v,d=4){
+  if(typeof v==='boolean')return v?'true':'false';
+  if(!isFinite(v))return isNaN(v)?'undefined':(v>0?'∞':'−∞');
+  if(Math.abs(v)<1e-11)return'0';
+  const a=Math.abs(v);let s;
+  if(a>=1e9||a<1e-5){const[m,e]=v.toExponential(d-1).split('e');s=String(parseFloat(m))+'×10'+String(parseInt(e,10)).split('').map(c=>SUPD[c]).join('');}
+  else s=String(parseFloat(v.toFixed(d)));
+  return s.replace(/^-/,'−');
+}
+function fmtPi(v){
+  const q=v/Math.PI;
+  for(const d of[1,2,3,4,6,12]){const p=Math.round(q*d);if(Math.abs(p/d-q)<1e-9){if(p===0)return'0';const g=gcd(Math.abs(p),d),pn=p/g,dn=d/g;return(pn<0?'−':'')+(Math.abs(pn)===1?'':Math.abs(pn))+'π'+(dn>1?'/'+dn:'');}}
+  return null;
+}
+function gcd(a,b){while(b){[a,b]=[b,a%b];}return a;}
+const numStr=v=>{const s=String(parseFloat(v.toPrecision(12)));return s.includes('e')?String(parseFloat(v.toFixed(10))):s;};
+
+/* ---------------- rendering math ---------------- */
+let rowReg=[];
+const CUR='<span class="cur"></span>';
+const RADSVG='<svg class="radsvg" viewBox="0 0 10 24" preserveAspectRatio="none" aria-hidden="true"><path d="M0.6 14.5 L3 13 L6 23 L9.6 0.6" vector-effect="non-scaling-stroke"/></svg>';
+const FNLABEL={asin:'sin⁻¹',acos:'cos⁻¹',atan:'tan⁻¹'};
+function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'})[c]);}
+function renderRow(row,cur,top){
+  const id=rowReg.push(row)-1;
+  let h='<span class="row'+(row.items.length?'':' empty')+(top?' top':'')+'" data-rr="'+id+'">';
+  row.items.forEach((it,i)=>{if(cur&&cur.row===row&&cur.idx===i)h+=CUR;h+=renderItem(it,id,i,cur);});
+  if(cur&&cur.row===row&&cur.idx===row.items.length)h+=CUR;
+  return h+'</span>';
+}
+function renderItem(it,rid,i,cur){
+  const d=' data-r="'+rid+'" data-i="'+i+'"';
+  const grp=(o,row,c)=>'<span class="grp"><span class="dl">'+o+'</span>'+renderRow(row,cur)+'<span class="dl">'+c+'</span></span>';
+  switch(it.t){
+    case 'c':{const v=it.v;let cl='ch';
+      if(/[a-zA-Zθ]/.test(v))cl+=' v';else if('+−×=<>≤≥:'.includes(v))cl+=' o';else if(v===',')cl+=' p';
+      return'<span class="'+cl+'"'+d+'>'+esc(v==='×'?'·':v)+'</span>';}
+    case 'f':return'<span class="ch fn"'+d+'>'+(FNLABEL[it.v]||it.v)+'</span>';
+    case 'paren':return'<span class="grp"'+d+'><span class="dl">(</span>'+renderRow(it.a,cur)+'<span class="dl">)</span></span>';
+    case 'abs':return'<span class="grp"'+d+'><span class="dl">|</span>'+renderRow(it.a,cur)+'<span class="dl">|</span></span>';
+    case 'brace':return'<span class="grp"'+d+'><span class="dl">{</span>'+renderRow(it.a,cur)+'<span class="dl">}</span></span>';
+    case 'frac':return'<span class="frac"'+d+'>'+renderRow(it.n,cur)+renderRow(it.d,cur)+'</span>';
+    case 'pow':return'<span class="sup"'+d+'>'+renderRow(it.a,cur)+'</span>';
+    case 'sqrt':return'<span class="sqrt"'+d+'>'+RADSVG+'<span class="rarg">'+renderRow(it.a,cur)+'</span></span>';
+    case 'root':return'<span class="sqrt"'+d+'><span class="idx">'+renderRow(it.i,cur)+'</span>'+RADSVG+'<span class="rarg">'+renderRow(it.a,cur)+'</span></span>';
+    case 'logb':return'<span class="logb"'+d+'><span class="fn">log</span><span class="sub">'+renderRow(it.b,cur)+'</span>'+grp('(',it.a,')')+'</span>';
+    case 'deriv':return'<span class="deriv"'+d+'><span class="frac"><span class="row"><span class="v">d</span></span><span class="row"><span class="v">dx</span></span></span>'+grp('(',it.a,')')+'</span>';
+  }
+  return'';
+}
+function fixDelims(root){
+  root.querySelectorAll('.dl').forEach(el=>{
+    el.style.transform='';
+    const ph=el.parentElement.getBoundingClientRect().height,eh=el.getBoundingClientRect().height;
+    if(eh>0&&ph/eh>1.12)el.style.transform='scaleY('+(ph/eh).toFixed(3)+')';
+  });
+}
+
+/* ---------------- editor ---------------- */
+let focus=null; // {id, cur:{row,idx}}
+const getE=id=>S.exprs.find(e=>e.id===id);
+const OPS=new Set(['+','−','×','=','<','>','≤','≥',',',':']);
+const WORDS=[['arcsin','f:asin'],['arccos','f:acos'],['arctan','f:atan'],['sqrt','sqrt'],['theta','θ'],['sinh','f:sinh'],['cosh','f:cosh'],['tanh','f:tanh'],
+  ['sin','f:sin'],['cos','f:cos'],['tan','f:tan'],['csc','f:csc'],['sec','f:sec'],['cot','f:cot'],['exp','f:exp'],['floor','f:floor'],['abs','abs'],['log','f:log'],['ln','f:ln'],['pi','π']];
+function put(node,enter){
+  const c=focus.cur;c.row.items.splice(c.idx,0,node);
+  for(const s of slotsOf(node))link(s,node,c.row);
+  if(enter!=null){const s=slotsOf(node)[enter];focus.cur={row:s,idx:s.items.length};}else focus.cur={row:c.row,idx:c.idx+1};
+}
+function typeChar(v){
+  const c=focus.cur,prev=c.row.items[c.idx-1];
+  if(v==='='&&prev&&prev.t==='c'&&(prev.v==='<'||prev.v==='>')){prev.v=prev.v==='<'?'≤':'≥';return;}
+  put(C(v));
+  if(/[a-zA-Z]/.test(v)){
+    let j=focus.cur.idx,word='';
+    while(j>0){const it=focus.cur.row.items[j-1];if(it.t==='c'&&/[a-zA-Z]/.test(it.v)){word=it.v+word;j--;}else break;}
+    for(const[w,act]of WORDS){if(word.endsWith(w)){
+      focus.cur.row.items.splice(focus.cur.idx-w.length,w.length);focus.cur.idx-=w.length;
+      if(act.startsWith('f:'))insFn(act.slice(2));else if(act==='sqrt')put({t:'sqrt',a:R()},0);else if(act==='abs')put({t:'abs',a:R()},0);else put(C(act));
+      break;}}
+  }
+}
+function insFn(name){put({t:'f',v:name});put({t:'paren',a:R()},0);}
+function insFrac(){
+  const{row,idx}=focus.cur;let j=idx;
+  while(j>0){const it=row.items[j-1];if(it.t==='c'&&OPS.has(it.v))break;j--;}
+  const grabbed=row.items.splice(j,idx-j);
+  const n=R(grabbed),d=R(),node={t:'frac',n,d};
+  row.items.splice(j,0,node);link(n,node,row);link(d,node,row);
+  focus.cur=grabbed.length?{row:d,idx:0}:{row:n,idx:0};
+}
+function closeGroup(types){
+  let row=focus.cur.row;
+  while(row._pn){const n=row._pn;if(types.includes(n.t)){const pr=row._pr;focus.cur={row:pr,idx:pr.items.indexOf(n)+1};return true;}row=row._pr;}
+  return false;
+}
+function moveLeft(){
+  const{row,idx}=focus.cur;
+  if(idx>0){const ss=slotsOf(row.items[idx-1]);if(ss.length){const s=ss[ss.length-1];focus.cur={row:s,idx:s.items.length};}else focus.cur={row,idx:idx-1};return;}
+  const n=row._pn;if(!n)return;const ss=slotsOf(n),k=ss.indexOf(row);
+  if(k>0){focus.cur={row:ss[k-1],idx:ss[k-1].items.length};return;}
+  focus.cur={row:row._pr,idx:row._pr.items.indexOf(n)};
+}
+function moveRight(){
+  const{row,idx}=focus.cur;
+  if(idx<row.items.length){const ss=slotsOf(row.items[idx]);if(ss.length)focus.cur={row:ss[0],idx:0};else focus.cur={row,idx:idx+1};return;}
+  const n=row._pn;if(!n)return;const ss=slotsOf(n),k=ss.indexOf(row);
+  if(k<ss.length-1){focus.cur={row:ss[k+1],idx:0};return;}
+  focus.cur={row:row._pr,idx:row._pr.items.indexOf(n)+1};
+}
+function backspace(){
+  const{row,idx}=focus.cur;
+  if(idx>0){
+    const it=row.items[idx-1],ss=slotsOf(it);
+    if(!ss.length||ss.every(s=>!s.items.length)){
+      row.items.splice(idx-1,1);let k=idx-1;
+      if(it.t==='paren'&&k>0&&row.items[k-1].t==='f'){row.items.splice(k-1,1);k--;}
+      focus.cur={row,idx:k};return;}
+    const s=ss[ss.length-1];focus.cur={row:s,idx:s.items.length};return;
+  }
+  const n=row._pn;if(!n)return;
+  const pr=row._pr,pos=pr.items.indexOf(n),ss=slotsOf(n),k=ss.indexOf(row);
+  if(k>0){focus.cur={row:ss[k-1],idx:ss[k-1].items.length};return;}
+  const flat=[].concat(...ss.map(s=>s.items));
+  pr.items.splice(pos,1,...flat);
+  for(const it of flat)for(const s of slotsOf(it))link(s,it,pr);
+  let p=pos;
+  if(n.t==='paren'&&!flat.length&&p>0&&pr.items[p-1].t==='f'){pr.items.splice(p-1,1);p--;}
+  focus.cur={row:pr,idx:p};
+}
+function press(k){
+  if(!focus)return;
+  if(k.startsWith('c:'))typeChar(k.slice(2));
+  else if(k.startsWith('f:'))insFn(k.slice(2));
+  else switch(k){
+    case 'frac':insFrac();break;
+    case 'pow':put({t:'pow',a:R()},0);break;
+    case 'sq':put({t:'pow',a:R([C('2')])});break;
+    case 'sqrt':put({t:'sqrt',a:R()},0);break;
+    case 'root':put({t:'root',i:R(),a:R()},0);break;
+    case 'abs':if(!closeGroupIfAtEnd('abs'))put({t:'abs',a:R()},0);break;
+    case 'paren':{const r=focus.cur.row,n=r._pn;
+      if(n&&n.t==='paren'&&!r.items.length){const pr=r._pr,i=pr.items.indexOf(n);if(i>0&&pr.items[i-1].t==='f')break;}
+      put({t:'paren',a:R()},0);break;}
+    case 'close':closeGroup(['paren','abs','brace']);break;
+    case 'brace':put({t:'brace',a:R()},0);break;
+    case 'rbrace':closeGroup(['brace']);break;
+    case 'logb':put({t:'logb',b:R(),a:R()},0);break;
+    case 'deriv':put({t:'deriv',a:R()},0);break;
+    case 'ex':put(C('e'));put({t:'pow',a:R()},0);break;
+    case 'tenx':put(C('1'));put(C('0'));put({t:'pow',a:R()},0);break;
+    case 'left':moveLeft();break;
+    case 'right':moveRight();break;
+    case 'bksp':backspace();break;
+    case 'enter':{const i=S.exprs.findIndex(e=>e.id===focus.id);const cur=S.exprs[i];
+      if(!cur.tree.items.length&&i===S.exprs.length-1)break;
+      const e=newExpr();S.exprs.splice(i+1,0,e);focusExpr(e.id);return;}
+    case 'hide':setKb(false);focus=null;tidy();refresh();return;
+  }
+  refresh(true);save();
+}
+function closeGroupIfAtEnd(t){const r=focus.cur.row;if(r._pn&&r._pn.t===t&&focus.cur.idx===r.items.length){closeGroup([t]);return true;}return false;}
+function focusExpr(id,cur){
+  const e=getE(id);if(!e)return;
+  focus={id,cur:cur||{row:e.tree,idx:e.tree.items.length}};sel=id;
+  setKb(true);refresh(true);
+}
+function tidy(){S.exprs=S.exprs.filter(e=>e.tree.items.length||(focus&&focus.id===e.id));}
+
+/* ---------------- list UI ---------------- */
+const listEl=$('#list');
+function plottable(e){return['fx','gy','polar','implicit','region','point'].includes(e.kind);}
+function renderList(scrollToFocus){
+  rowReg=[];
+  let h='';
+  S.exprs.forEach((e,idx)=>{
+    const f=focus&&focus.id===e.id;
+    const math=e.tree.items.length||f?'<span class="m">'+renderRow(e.tree,f?focus.cur:null,true)+'</span>':'<span class="ph">Type an equation, like y = x²</span>';
+    const sw=plottable(e)?'<button class="sw'+(e.hidden?' off':'')+'" data-act="vis" style="--c:'+e.color+'" aria-label="Show or hide"></button>':'<span class="sw nop">'+(idx+1)+'</span>';
+    h+='<div class="ex'+(f?' focus':'')+'" data-id="'+e.id+'"><div class="gut">'+sw+'</div><div class="body"><div class="math">'+math+'</div><div class="extra">'+extraHtml(e)+'</div></div><button class="more" data-act="more" aria-label="Options">⋯</button></div>';
+  });
+  h+='<button class="addrow" data-act="add">+ New expression</button>';
+  listEl.innerHTML=h;
+  listEl.querySelectorAll('.m').forEach(fixDelims);
+  if(scrollToFocus&&focus){const c=listEl.querySelector('.cur');if(c){c.scrollIntoView({block:'nearest',inline:'nearest'});}}
+}
+function extraHtml(e){
+  if(e.kind==='error')return'<span class="err">'+esc(e.err)+'</span>';
+  if(e.kind==='missing')return'<span>Add slider:</span>'+e.missing.map(v=>'<button class="chip" data-slider="'+v+'">'+v+'</button>').join('')+(e.missing.length>1?'<button class="chip all" data-slider="*">all</button>':'');
+  if(e.kind==='value')return'<span class="val" data-live="'+e.id+'">= '+(e.f?fmt(e.f(0,0,0),6):fmt(e.boolv))+'</span>';
+  if(e.kind==='def')return'<span class="val" data-live="'+e.id+'">= '+fmt(e.value,6)+'</span>';
+  if(e.kind==='slider'){
+    const sl=e.slider||(e.slider={min:Math.min(-10,e.value),max:Math.max(10,e.value)});
+    if(e.value<sl.min)sl.min=e.value;if(e.value>sl.max)sl.max=e.value;
+    return'<div class="sl" style="--c:'+e.color+'"><button class="play" data-act="play" aria-label="Play">'+(e.playing?'<svg viewBox="0 0 16 16"><rect x="3" y="2" width="3.5" height="12"/><rect x="9.5" y="2" width="3.5" height="12"/></svg>':'<svg viewBox="0 0 16 16"><path d="M4 2l10 6-10 6z"/></svg>')+'</button>'+
+      '<input class="b" data-b="min" inputmode="decimal" value="'+numStr(sl.min)+'" aria-label="Minimum"><input type="range" data-range min="'+sl.min+'" max="'+sl.max+'" step="any" value="'+e.value+'" aria-label="'+e.defName+'"><input class="b" data-b="max" inputmode="decimal" value="'+numStr(sl.max)+'" aria-label="Maximum"></div>';
+  }
+  return'';
+}
+function updateLive(){listEl.querySelectorAll('[data-live]').forEach(el=>{const e=getE(+el.dataset.live);if(!e)return;el.textContent='= '+(e.kind==='def'?fmt(e.value,6):e.f?fmt(e.f(0,0,0),6):fmt(e.boolv));});}
+function refresh(scroll){analyze();renderList(scroll);draw();}
+
+function setSliderValue(e,v,{rerender=true}={}){
+  const sl=e.slider;const dec=Math.max(0,Math.min(6,2-Math.floor(Math.log10(Math.max(1e-9,sl.max-sl.min)))));
+  v=+v.toFixed(dec);
+  e.value=v;VALS[e.defName]=v;recomputeDefs();
+  const t=fromTex(e.defName+'='+numStr(v));e.tree.items=t.items;link(e.tree);
+  if(focus&&focus.id===e.id)focus.cur={row:e.tree,idx:e.tree.items.length};
+  if(rerender&&rowReg.length>4000){rowReg=[];renderList();}
+  else if(rerender){const m=listEl.querySelector('.ex[data-id="'+e.id+'"] .math');if(m){m.innerHTML='<span class="m">'+renderRow(e.tree,focus&&focus.id===e.id?focus.cur:null,true)+'</span>';}}
+  updateLive();draw();save();
+}
+listEl.addEventListener('input',ev=>{
+  const t=ev.target;if(!t.matches('[data-range]'))return;
+  const e=getE(+t.closest('.ex').dataset.id);if(e)setSliderValue(e,parseFloat(t.value));
+});
+listEl.addEventListener('change',ev=>{
+  const t=ev.target;const ex=t.closest('.ex');if(!ex)return;const e=getE(+ex.dataset.id);if(!e)return;
+  if(t.matches('[data-b]')){const v=parseFloat(t.value.replace('−','-'));if(isFinite(v)){e.slider[t.dataset.b]=v;if(e.slider.min>=e.slider.max){if(t.dataset.b==='min')e.slider.max=v+1;else e.slider.min=v-1;}}refresh();save();}
+});
+listEl.addEventListener('click',ev=>{
+  if(performance.now()<noClickUntil)return;
+  const t=ev.target;
+  if(t.closest('input'))return;
+  const act=t.closest('[data-act]');const ex=t.closest('.ex');const e=ex&&getE(+ex.dataset.id);
+  if(t.closest('[data-slider]')){const v=t.closest('[data-slider]').dataset.slider;addSliders(e,v==='*'?e.missing:[v]);return;}
+  if(act){
+    const a=act.dataset.act;
+    if(a==='add'){if(focus){focus=null;tidy();}const n=newExpr();S.exprs.push(n);focusExpr(n.id);return;}
+    if(a==='vis'){e.hidden=!e.hidden;renderList();draw();save();return;}
+    if(a==='more'){openExprSheet(e);return;}
+    if(a==='play'){togglePlay(e);return;}
+  }
+  if(!e)return;
+  if(t.closest('.extra'))return;
+  // place cursor
+  let cur=null;
+  if(focus&&focus.id===e.id){
+    const ci=t.closest('[data-i],[data-rr]');
+    if(ci){
+      if(ci.dataset.i!==undefined){const row=rowReg[+ci.dataset.r],i=+ci.dataset.i;const r=ci.getBoundingClientRect();cur={row,idx:ev.clientX<r.left+r.width/2?i:i+1};}
+      else{const row=rowReg[+ci.dataset.rr];cur={row,idx:row.items.length};}
+    }
+  }
+  if(focus&&focus.id!==e.id){focus=null;tidy();}
+  focusExpr(e.id,cur);
+});
+function addSliders(e,names){
+  let i=S.exprs.indexOf(e);
+  for(const n of names){const s=newExpr(n+'=1',{slider:[-10,10]});S.exprs.splice(++i,0,s);}
+  refresh();save();
+}
+let playRaf=0,playLast=0;
+function togglePlay(e){
+  e.playing=!e.playing;renderList();
+  if(e.playing&&!playRaf){playLast=performance.now();playRaf=requestAnimationFrame(playTick);}
+}
+function playTick(now){
+  const dt=Math.min(100,now-playLast);playLast=now;
+  const ps=S.exprs.filter(e=>e.playing&&e.kind==='slider');
+  if(!ps.length){playRaf=0;return;}
+  for(const e of ps){
+    const sl=e.slider;let v=e.value+(sl.max-sl.min)*dt/6000;if(v>sl.max)v=sl.min;
+    e.value=v;
+    const inp=listEl.querySelector('.ex[data-id="'+e.id+'"] [data-range]');if(inp)inp.value=v;
+    setSliderValue(e,v);e.value=v;VALS[e.defName]=v;
+  }
+  recomputeDefs();draw();
+  playRaf=requestAnimationFrame(playTick);
+}
+
+/* ---------------- keypad ---------------- */
+const kpEl=$('#keypad');let page='main';
+const I=s=>'<i>'+s+'</i>';
+const SVG={
+  left:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
+  right:'<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
+  bksp:'<svg viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg>',
+  enter:'<svg viewBox="0 0 24 24"><path d="M19 5v7H6"/><path d="M10 8l-4 4 4 4"/></svg>',
+  hide:'<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>'
+};
+const FRACK='<span class="kfrac"><span>□</span><span>□</span></span>';
+const PAGES={
+  main:{cols:8,keys:[
+    ['c:x',I('x'),'mt'],['c:y',I('y'),'mt'],['sq',I('a')+'²','mt'],['pow',I('a')+'<sup>b</sup>','mt'],['c:7','7','n'],['c:8','8','n'],['c:9','9','n'],['frac','÷','mt'],
+    ['paren','(','mt'],['close',')','mt'],['c:<','&lt;','mt'],['c:>','&gt;','mt'],['c:4','4','n'],['c:5','5','n'],['c:6','6','n'],['c:×','×','mt'],
+    ['abs','|'+I('a')+'|','mt'],['c:e',I('e'),'mt'],['c:≤','≤','mt'],['c:≥','≥','mt'],['c:1','1','n'],['c:2','2','n'],['c:3','3','n'],['c:−','−','mt'],
+    ['c:a',I('a'),'mt'],['c:b',I('b'),'mt'],['sqrt','√','mt'],['c:π','π','mt'],['c:0','0','n'],['c:.','.','n'],['c:=','=','mt'],['c:+','+','mt']]},
+  func:{cols:8,keys:[
+    ['f:sin','sin','f'],['f:cos','cos','f'],['f:tan','tan','f'],['f:csc','csc','f'],['f:sec','sec','f'],['f:cot','cot','f'],['f:ln','ln','f'],['f:log','log','f'],
+    ['f:asin','sin⁻¹','f'],['f:acos','cos⁻¹','f'],['f:atan','tan⁻¹','f'],['logb','log<sub>n</sub>','f'],['root','<sup>n</sup>√','f'],['ex','e<sup>x</sup>','f'],['tenx','10<sup>x</sup>','f'],['deriv','d/dx','f'],
+    ['c:x',I('x'),'mt'],['c:y',I('y'),'mt'],['c:r',I('r'),'mt'],['c:θ',I('θ'),'mt'],['c:π','π','mt'],['c:e',I('e'),'mt'],['abs','|'+I('a')+'|','mt'],['frac','÷','mt'],
+    ['paren','(','mt'],['close',')','mt'],['c:,',',','mt'],['brace','{ }','mt'],['c:<','&lt;','mt'],['c:>','&gt;','mt'],['c:≤','≤','mt'],['c:≥','≥','mt']]},
+  abc:{cols:10,keys:[
+    ...'qwertyuiop'.split('').map(c=>['c:'+c,c,'n']),
+    ...'asdfghjkl'.split('').map(c=>['c:'+c,c,'n']),['c:θ','θ','n'],
+    ...'zxcvbnm'.split('').map(c=>['c:'+c,c,'n']),['paren','(','mt'],['close',')','mt'],['c:=','=','mt']]}
+};
+function renderKeypad(){
+  const p=PAGES[page];
+  let h='<div class="kp c'+p.cols+'">'+p.keys.map(([k,l,c])=>'<button data-k="'+k+'" class="'+(c||'')+'" aria-label="'+k.replace(/^c:|^f:/,'')+'"><span>'+l+'</span></button>').join('')+'</div>';
+  h+='<div class="ctl">'+
+    '<button data-page="'+(page==='func'?'main':'func')+'" class="kp-sw">'+(page==='func'?'123':'f(x)')+'</button>'+
+    '<button data-page="'+(page==='abc'?'main':'abc')+'" class="kp-sw">'+(page==='abc'?'123':'abc')+'</button>'+
+    '<button data-k="left" aria-label="Left">'+SVG.left+'</button><button data-k="right" aria-label="Right">'+SVG.right+'</button>'+
+    '<button data-k="bksp" aria-label="Delete">'+SVG.bksp+'</button><button data-k="enter" class="ac" aria-label="New line">'+SVG.enter+'</button><button data-k="hide" aria-label="Close keypad">'+SVG.hide+'</button></div>';
+  kpEl.innerHTML=h;
+  kpEl.querySelector('.ctl').classList.add('kp');
+}
+let rep=0,repT=0;
+kpEl.addEventListener('pointerdown',ev=>{
+  const b=ev.target.closest('button');if(!b)return;ev.preventDefault();
+  b.classList.add('down');
+  if(b.dataset.page){page=b.dataset.page;renderKeypad();return;}
+  const k=b.dataset.k;press(k);
+  if(page==='func'&&b.classList.contains('f')){page='main';renderKeypad();return;}
+  if(k==='bksp'||k==='left'||k==='right'){clearTimeout(repT);clearInterval(rep);repT=setTimeout(()=>{rep=setInterval(()=>press(k),70);},420);}
+});
+kpEl.addEventListener('touchstart',ev=>{if(ev.target.closest('button'))ev.preventDefault();},{passive:false});
+let noClickUntil=0;
+const upKey=()=>{clearTimeout(repT);clearInterval(rep);kpEl.querySelectorAll('.down').forEach(b=>b.classList.remove('down'));};
+['pointerup','pointercancel','pointerleave'].forEach(t=>kpEl.addEventListener(t,upKey));
+function setKb(on){if(!on&&document.body.classList.contains('kb'))noClickUntil=performance.now()+350;document.body.classList.toggle('kb',on);}
+
+/* physical keyboard */
+document.addEventListener('keydown',ev=>{
+  if(!focus||ev.target.closest('input')||ev.metaKey||ev.ctrlKey||ev.altKey)return;
+  const k=ev.key;let a=null;
+  if(/^[0-9a-zA-Z.]$/.test(k))a='c:'+k;
+  else a={'+':'c:+','-':'c:−','*':'c:×','/':'frac','^':'pow','(':'paren',')':'close','|':'abs','=':'c:=','<':'c:<','>':'c:>',',':'c:,',':':'c::','{':'brace','}':'rbrace',
+    Backspace:'bksp',ArrowLeft:'left',ArrowRight:'right',Enter:'enter',Escape:'hide'}[k];
+  if(a){ev.preventDefault();press(a);}
+});
+
+/* ---------------- graph ---------------- */
+const cv=$('#cv'),gw=$('#graphWrap'),ctx=cv.getContext('2d');
+let W=300,H=300,DPR=1,V={cx:0,cy:0,s:20};
+const sx=x=>(x-V.cx)*V.s+W/2,sy=y=>H/2-(y-V.cy)*V.s,wx=X=>(X-W/2)/V.s+V.cx,wy=Y=>(H/2-Y)/V.s+V.cy;
+let COL={};
+function readColors(){const cs=getComputedStyle(document.documentElement);for(const k of['g-bg','g-minor','g-major','g-axis','g-label','accent','ink','card','muted'])COL[k]=cs.getPropertyValue('--'+k).trim();}
+function homeView(){V={cx:0,cy:0,s:Math.max(8,Math.min(W,H)/20)};}
+function resize(){
+  const r=gw.getBoundingClientRect();if(!r.width||!r.height)return;
+  const first=!V._init;
+  W=r.width;H=r.height;DPR=Math.min(3,window.devicePixelRatio||1);
+  cv.width=Math.round(W*DPR);cv.height=Math.round(H*DPR);
+  if(first){if(S.view&&S.view.s)V={cx:S.view.cx,cy:S.view.cy,s:S.view.s};else homeView();V._init=true;}
+  drawNow();
+}
+new ResizeObserver(resize).observe(gw);
+let drawQ=0;
+function draw(){if(!drawQ)drawQ=requestAnimationFrame(()=>{drawQ=0;drawNow();});}
+
+function niceStep(minPx){
+  const raw=minPx/V.s,p=Math.pow(10,Math.floor(Math.log10(raw))),m=raw/p;
+  const n=m<=1?1:m<=2?2:m<=5?5:10;const major=n*p;
+  return{major,minor:major/((n===2)?4:5)};
+}
+function piStep(minPx){
+  const C=[1/12,1/6,1/4,1/2,1,2,4,5,10,20,50,100,200,500,1000];
+  for(const c of C){if(c*Math.PI*V.s>=minPx)return{major:c*Math.PI,minor:c*Math.PI/2};}
+  return{major:1000*Math.PI,minor:500*Math.PI};
+}
+function tickLabel(v,step){
+  if(Math.abs(v)<step*1e-6)return'0';
+  const a=Math.abs(v);
+  if(a>=1e6||a<1e-4){const[m,e]=v.toExponential(2).split('e');return(String(parseFloat(m))+'e'+parseInt(e,10)).replace(/^-/,'−');}
+  const d=Math.max(0,-Math.floor(Math.log10(step)+1e-9));
+  return String(parseFloat(v.toFixed(Math.min(10,d+1)))).replace(/^-/,'−');
+}
+function drawGrid(){
+  const xs=S.set.pi?piStep(80):niceStep(64),ys=niceStep(64);
+  const x0=wx(0),x1=wx(W),y0=wy(H),y1=wy(0);
+  if(S.set.grid){
+    ctx.lineWidth=1;
+    for(const[st,col]of[[xs.minor,COL['g-minor']],[xs.major,COL['g-major']]]){
+      ctx.strokeStyle=col;ctx.beginPath();
+      for(let k=Math.ceil(x0/st);k*st<=x1;k++){const X=Math.round(sx(k*st))+.5;ctx.moveTo(X,0);ctx.lineTo(X,H);}
+      ctx.stroke();
+    }
+    for(const[st,col]of[[ys.minor,COL['g-minor']],[ys.major,COL['g-major']]]){
+      ctx.strokeStyle=col;ctx.beginPath();
+      for(let k=Math.ceil(y0/st);k*st<=y1;k++){const Y=Math.round(sy(k*st))+.5;ctx.moveTo(0,Y);ctx.lineTo(W,Y);}
+      ctx.stroke();
+    }
+  }
+  // axes
+  ctx.strokeStyle=COL['g-axis'];ctx.lineWidth=1.5;ctx.beginPath();
+  const ax=sx(0),ay=sy(0);
+  if(ax>=0&&ax<=W){ctx.moveTo(ax,0);ctx.lineTo(ax,H);}
+  if(ay>=0&&ay<=H){ctx.moveTo(0,ay);ctx.lineTo(W,ay);}
+  ctx.stroke();
+  // labels
+  ctx.font='500 12px "Atkinson Hyperlegible",-apple-system,sans-serif';
+  ctx.lineWidth=3.5;ctx.strokeStyle=COL['g-bg'];ctx.fillStyle=COL['g-label'];ctx.lineJoin='round';
+  const ly=Math.min(Math.max(ay+4,4),H-18);
+  ctx.textAlign='center';ctx.textBaseline='top';
+  for(let k=Math.ceil(x0/xs.major);k*xs.major<=x1;k++){
+    if(k===0)continue;const v=k*xs.major,X=sx(v);
+    const s=S.set.pi?(fmtPi(v)||tickLabel(v,xs.major)):tickLabel(v,xs.major);
+    {const tw=ctx.measureText(s).width/2;if(X-tw<2||X+tw>W-2)continue;}ctx.strokeText(s,X,ly);ctx.fillText(s,X,ly);
+  }
+  ctx.textAlign='right';ctx.textBaseline='middle';
+  let lx=ax-5;let align='right';
+  if(lx<30){lx=5;align='left';}else if(lx>W)lx=W-5;
+  ctx.textAlign=align;
+  for(let k=Math.ceil(y0/ys.major);k*ys.major<=y1;k++){
+    if(k===0)continue;const v=k*ys.major,Y=sy(v);if(Y<8||Y>H-8)continue;
+    const s=tickLabel(v,ys.major);ctx.strokeText(s,lx,Y);ctx.fillText(s,lx,Y);
+  }
+  if(ax>=0&&ax<=W&&ay>=0&&ay<=H){ctx.textAlign='right';ctx.textBaseline='top';ctx.strokeText('0',ax-5,ay+4);ctx.fillText('0',ax-5,ay+4);}
+}
+const LW=2.6;
+function isDiscontinuous(f,x0,x1,y0,y1){
+  for(let k=0;k<14;k++){const xm=(x0+x1)/2,ym=f(xm,0,0);if(!isFinite(ym))return true;
+    if(Math.abs(ym-y0)>Math.abs(y1-ym)){x1=xm;y1=ym;}else{x0=xm;y0=ym;}}
+  return Math.abs(y1-y0)*V.s>1.5;
+}
+const CLAMP=v=>v<-5e4?-5e4:v>5e4?5e4:v;
+function plotFx(f,color){
+  ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+  const step=0.5;let pen=false,px=0,py=0;
+  for(let X=-2;X<=W+2;X+=step){
+    const x=wx(X),y=f(x,0,0);
+    if(!isFinite(y)){pen=false;continue;}
+    const Y=sy(y);
+    if(pen&&Math.abs(Y-sy(py))>30&&isDiscontinuous(f,px,x,py,y))pen=false;
+    if(pen)ctx.lineTo(X,CLAMP(Y));else ctx.moveTo(X,CLAMP(Y));
+    pen=true;px=x;py=y;
+  }
+  ctx.stroke();
+}
+function plotGy(g,color){
+  ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+  const gf=(y)=>g(0,y,0);const f2=(y)=>gf(y);
+  let pen=false,py=0,px=0;
+  for(let Y=-2;Y<=H+2;Y+=0.5){
+    const y=wy(Y),x=gf(y);
+    if(!isFinite(x)){pen=false;continue;}
+    const X=sx(x);
+    if(pen&&Math.abs(X-sx(px))>30&&isDiscontinuous((u)=>f2(u),py,y,px,x))pen=false;
+    if(pen)ctx.lineTo(CLAMP(X),Y);else ctx.moveTo(CLAMP(X),Y);
+    pen=true;py=y;px=x;
+  }
+  ctx.stroke();
+}
+function plotPolar(f,color){
+  ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineJoin='round';ctx.lineCap='round';ctx.beginPath();
+  const N=6000,T=12*Math.PI;let pen=false,pX=0,pY=0;
+  for(let k=0;k<=N;k++){
+    const t=T*k/N,r=f(0,0,t/ANG);
+    if(!isFinite(r)){pen=false;continue;}
+    const X=sx(r*Math.cos(t)),Y=sy(r*Math.sin(t));
+    if(pen&&Math.hypot(X-pX,Y-pY)>Math.max(W,H))pen=false;
+    if(pen)ctx.lineTo(CLAMP(X),CLAMP(Y));else ctx.moveTo(CLAMP(X),CLAMP(Y));
+    pen=true;pX=X;pY=Y;
+  }
+  ctx.stroke();
+}
+const CELL=2.5;
+function gridVals(F){
+  const nx=Math.ceil(W/CELL)+1,ny=Math.ceil(H/CELL)+1,v=new Float64Array(nx*ny);
+  for(let j=0;j<ny;j++){const y=wy(j*CELL);for(let i=0;i<nx;i++)v[j*nx+i]=F(wx(i*CELL),y);}
+  return{nx,ny,v};
+}
+function contour(g,color,dashed){
+  const{nx,ny,v}=g;
+  ctx.strokeStyle=color;ctx.lineWidth=LW;ctx.lineCap='butt';ctx.beginPath();
+  const pts=[];
+  for(let j=0;j<ny-1;j++)for(let i=0;i<nx-1;i++){
+    const a=v[j*nx+i],b=v[j*nx+i+1],c=v[(j+1)*nx+i+1],d=v[(j+1)*nx+i];
+    if(!(isFinite(a)&&isFinite(b)&&isFinite(c)&&isFinite(d)))continue;
+    const sa=a>=0,sb=b>=0,sc=c>=0,sd=d>=0;
+    if(sa===sb&&sb===sc&&sc===sd)continue;
+    pts.length=0;
+    if(sa!==sb)pts.push((i+a/(a-b))*CELL,j*CELL);
+    if(sb!==sc)pts.push((i+1)*CELL,(j+b/(b-c))*CELL);
+    if(sd!==sc)pts.push((i+d/(d-c))*CELL,(j+1)*CELL);
+    if(sa!==sd)pts.push(i*CELL,(j+a/(a-d))*CELL);
+    if(dashed&&pts.length===4){const k=Math.abs(pts[2]-pts[0])>=Math.abs(pts[3]-pts[1])?i:j;if(Math.floor(k/3)%2)continue;}
+    if(pts.length===4){ctx.moveTo(pts[0],pts[1]);ctx.lineTo(pts[2],pts[3]);}
+    else if(pts.length===8){const m=(a+b+c+d)/4;
+      if((m>=0)===sa){ctx.moveTo(pts[0],pts[1]);ctx.lineTo(pts[2],pts[3]);ctx.moveTo(pts[4],pts[5]);ctx.lineTo(pts[6],pts[7]);}
+      else{ctx.moveTo(pts[0],pts[1]);ctx.lineTo(pts[6],pts[7]);ctx.moveTo(pts[2],pts[3]);ctx.lineTo(pts[4],pts[5]);}}
+  }
+  ctx.stroke();ctx.lineCap='round';
+}
+const off=document.createElement('canvas'),offc=off.getContext('2d');
+function hexRgb(h){const n=parseInt(h.slice(1),16);return[(n>>16)&255,(n>>8)&255,n&255];}
+function plotRegion(e){
+  const gs=e.pairs.map(p=>gridVals(p.F));
+  const{nx,ny}=gs[0];
+  off.width=nx;off.height=ny;const img=offc.createImageData(nx,ny);const[r,g,b]=hexRgb(e.color);
+  for(let k=0;k<nx*ny;k++){
+    let ok=true;for(let q=0;q<gs.length;q++){const d=gs[q].v[k];if(!cmp(e.pairs[q].op,d,0)){ok=false;break;}}
+    if(ok){const o=k*4;img.data[o]=r;img.data[o+1]=g;img.data[o+2]=b;img.data[o+3]=64;}
+  }
+  offc.putImageData(img,0,0);
+  ctx.imageSmoothingEnabled=true;ctx.drawImage(off,-CELL/2,-CELL/2,nx*CELL,ny*CELL);
+  gs.forEach((g,q)=>contour(g,e.color,e.pairs[q].strict));
+}
+function dot(X,Y,r,fill,stroke){ctx.beginPath();ctx.arc(X,Y,r,0,Math.PI*2);ctx.fillStyle=fill;ctx.fill();if(stroke){ctx.lineWidth=2;ctx.strokeStyle=stroke;ctx.stroke();}}
+
+/* points of interest */
+function bisect(h,a,b,fa){
+  for(let i=0;i<64;i++){const m=(a+b)/2,fm=h(m);if(!isFinite(fm))return null;if(fm===0)return m;if((fa<0)!==(fm<0))b=m;else{a=m;fa=fm;}}
+  const r=(a+b)/2,v=h(r);return(isFinite(v)&&Math.abs(v)*V.s<0.5)?r:null;
+}
+function golden(f,a,b,isMax){
+  const g=(Math.sqrt(5)-1)/2,s=isMax?-1:1;let c=b-g*(b-a),d=a+g*(b-a),fc=s*f(c),fd=s*f(d);
+  for(let i=0;i<70;i++){if(fc<fd){b=d;d=c;fd=fc;c=b-g*(b-a);fc=s*f(c);}else{a=c;c=d;fc=fd;d=a+g*(b-a);fd=s*f(d);}}
+  const x=(a+b)/2;return{x,y:f(x)};
+}
+function zerosOf(h,xs,hs,type,yOf,out){
+  for(let k=0;k<xs.length-1;k++){
+    const a=hs[k],b=hs[k+1];if(!isFinite(a)||!isFinite(b))continue;
+    if(a===0){out.push({x:xs[k],y:yOf(xs[k]),t:type});continue;}
+    if((a<0)!==(b<0)&&b!==0){const r=bisect(h,xs[k],xs[k+1],a);if(r!==null)out.push({x:r,y:yOf(r),t:type});}
+  }
+}
+function computePOI(e){
+  const f=x=>e.f(x,0,0);const N=Math.min(1600,Math.round(W*2));const x0=wx(0),x1=wx(W);
+  const xs=new Float64Array(N+1),ys=new Float64Array(N+1);
+  for(let k=0;k<=N;k++){xs[k]=x0+(x1-x0)*k/N;ys[k]=f(xs[k]);}
+  const out=[];
+  zerosOf(f,xs,ys,'x-intercept',()=>0,out);
+  for(let k=1;k<N;k++){
+    const a=ys[k-1],b=ys[k],c=ys[k+1];if(!isFinite(a)||!isFinite(b)||!isFinite(c))continue;
+    const mx=b>a&&b>c,mn=b<a&&b<c;
+    if(mx||mn){const r=golden(f,xs[k-1],xs[k+1],mx);if(isFinite(r.y)&&Math.abs(sy(r.y))<1e4&&Math.abs(r.y-b)*V.s<50)out.push({x:r.x,y:r.y,t:mx?'Local max':'Local min'});}
+  }
+  if(x0<0&&x1>0){const y=f(0);if(isFinite(y))out.push({x:0,y,t:'y-intercept'});}
+  for(const o of S.exprs){
+    if(o===e||o.kind!=='fx'||o.hidden)continue;
+    const g=x=>o.f(x,0,0),h=x=>f(x)-g(x),hs=new Float64Array(N+1);
+    for(let k=0;k<=N;k++)hs[k]=ys[k]-g(xs[k]);
+    zerosOf(h,xs,hs,'Intersection',f,out);
+  }
+  out.sort((a,b)=>a.x-b.x);
+  const res=[];for(const p of out){const q=res[res.length-1];if(q&&Math.abs(q.x-p.x)*V.s<2&&Math.abs(q.y-p.y)*V.s<2){if(p.t==='Intersection')res[res.length-1]=p;continue;}res.push(p);}
+  return res.filter(p=>Math.abs(p.y)<1e15);
+}
+
+/* ---------------- interaction state ---------------- */
+let sel=null;        // selected expression id (shows points of interest)
+let trace=null;      // {id,x,y,t}  t = 'curve' | poi type | 'point'
+let tangent=false;
+let poiCache=[];
+
+function drawNow(){
+  if(!COL.accent)readColors();
+  ctx.setTransform(DPR,0,0,DPR,0,0);
+  ctx.fillStyle=COL['g-bg'];ctx.fillRect(0,0,W,H);
+  drawGrid();
+  const vis=S.exprs.filter(e=>!e.hidden);
+  for(const e of vis)if(e.kind==='region')try{plotRegion(e);}catch(x){}
+  for(const e of vis){
+    try{
+      if(e.kind==='fx')plotFx(e.f,e.color);
+      else if(e.kind==='gy')plotGy(e.f,e.color);
+      else if(e.kind==='polar')plotPolar(e.f,e.color);
+      else if(e.kind==='implicit')contour(gridVals(e.pairs[0].F),e.color,false);
+    }catch(x){}
+  }
+  for(const e of vis)if(e.kind==='point'){const x=e.px(0,0,0),y=e.py(0,0,0);if(isFinite(x)&&isFinite(y))dot(sx(x),sy(y),5.5,e.color);}
+  if(S.set.uc)drawUC();
+  // points of interest
+  poiCache=[];
+  const se=sel&&getE(sel);
+  if(se&&se.kind==='fx'&&!se.hidden){poiCache=computePOI(se);for(const p of poiCache)dot(sx(p.x),sy(p.y),4.5,COL['g-bg'],'rgba(120,130,140,.9)');}
+  // trace
+  if(trace){
+    const e=getE(trace.id);
+    if(!e||e.hidden||!plottable(e))trace=null;
+    else{
+      if(trace.t==='curve'&&e.kind==='fx')trace.y=e.f(trace.x,0,0);
+      if(trace.t==='curve'&&e.kind==='gy')trace.x=e.f(0,trace.y,0);
+      if(trace.t==='point'){trace.x=e.px(0,0,0);trace.y=e.py(0,0,0);}
+      if(isFinite(trace.x)&&isFinite(trace.y)){
+        if(tangent&&e.kind==='fx'){const m=slopeAt(e,trace.x);if(isFinite(m)){ctx.strokeStyle=COL.ink;ctx.globalAlpha=.55;ctx.lineWidth=1.6;ctx.setLineDash([6,5]);ctx.beginPath();
+          const xa=wx(-10),xb=wx(W+10);ctx.moveTo(sx(xa),CLAMP(sy(trace.y+m*(xa-trace.x))));ctx.lineTo(sx(xb),CLAMP(sy(trace.y+m*(xb-trace.x))));ctx.stroke();ctx.setLineDash([]);ctx.globalAlpha=1;}}
+        dot(sx(trace.x),sy(trace.y),7,e.color,COL['g-bg']);
+      }
+    }
+  }
+  renderPills();
+  V_save();
+}
+function slopeAt(e,x){const h=1e-5*Math.max(1,Math.abs(x));return(e.f(x+h,0,0)-e.f(x-h,0,0))/(2*h);}
+let vst=0;function V_save(){clearTimeout(vst);vst=setTimeout(save,400);}
+
+/* unit circle */
+const EXACT_S={0:'0',30:'1/2',45:'√2/2',60:'√3/2',90:'1'},EXACT_T={0:'0',30:'√3/3',45:'1',60:'√3'};
+function exactTrig(th){
+  const deg=((th*180/Math.PI)%360+360)%360,dr=Math.round(deg)%360;
+  if(Math.abs(deg-Math.round(deg))>1e-6||!(dr%30===0||dr%45===0))return null;
+  let ref=dr%180;if(ref>90)ref=180-ref;
+  const ss=(dr===0||dr===180)?0:(dr<180?1:-1),cs=(dr===90||dr===270)?0:((dr<90||dr>270)?1:-1);
+  const sg=(n,v)=>(n<0?'−':'')+v;
+  const s=sg(ss,EXACT_S[ref]),c=sg(cs,EXACT_S[90-ref]);
+  const t=ref===90?'undefined':sg(ss*cs,EXACT_T[ref]);
+  return{s,c,t};
+}
+function drawUC(){
+  const O={X:sx(0),Y:sy(0)},r=V.s,th=S.uc;
+  ctx.lineWidth=1.5;ctx.strokeStyle=COL.muted;ctx.beginPath();ctx.arc(O.X,O.Y,r,0,Math.PI*2);ctx.stroke();
+  for(let k=0;k<24;k++){const a=k*Math.PI/12;if(k%2&&k%3)continue;dot(O.X+r*Math.cos(a),O.Y-r*Math.sin(a),2.5,COL.muted);}
+  if(r>110){ctx.font='12px "Atkinson Hyperlegible",sans-serif';ctx.fillStyle=COL['g-label'];ctx.textAlign='center';ctx.textBaseline='middle';
+    for(let k=0;k<24;k++){if(k%2&&k%3)continue;const a=k*Math.PI/12;const lbl=S.set.deg?(k*15)+'°':fmtPi(a);ctx.fillText(lbl,O.X+(r+22)*Math.cos(a),O.Y-(r+22)*Math.sin(a));}}
+  const P={X:O.X+r*Math.cos(th),Y:O.Y-r*Math.sin(th)};
+  ctx.lineWidth=3;ctx.strokeStyle='#2d70b3';ctx.beginPath();ctx.moveTo(O.X,O.Y);ctx.lineTo(P.X,O.Y);ctx.stroke();
+  ctx.strokeStyle='#c74440';ctx.beginPath();ctx.moveTo(P.X,O.Y);ctx.lineTo(P.X,P.Y);ctx.stroke();
+  ctx.lineWidth=2;ctx.strokeStyle=COL.ink;ctx.beginPath();ctx.moveTo(O.X,O.Y);ctx.lineTo(P.X,P.Y);ctx.stroke();
+  ctx.lineWidth=1.5;ctx.beginPath();ctx.arc(O.X,O.Y,Math.min(28,r*.25),0,-((th%(2*Math.PI))+2*Math.PI)%(2*Math.PI),true);ctx.stroke();
+  dot(P.X,P.Y,8,COL.accent,COL['g-bg']);
+}
+
+/* pills */
+const pillsEl=$('#pills');let lastPills='';
+function renderPills(){
+  let h='';
+  if(trace&&isFinite(trace.x)&&isFinite(trace.y)){
+    const e=getE(trace.id);const lab=trace.t==='curve'||trace.t==='point'?'':'<span class="k">'+trace.t+'</span>';
+    h+='<div class="pill">'+lab+'<span class="mono">('+fmt(trace.x)+', '+fmt(trace.y)+')</span>';
+    if(e&&e.kind==='fx'){if(tangent)h+='<span class="k">slope</span><span class="mono">'+fmt(slopeAt(e,trace.x))+'</span>';h+='<button class="tg'+(tangent?' on':'')+'" data-p="tan">Tangent</button>';}
+    h+='<button class="x" data-p="close" aria-label="Close">×</button></div>';
+  }
+  if(S.set.uc){
+    const th=S.uc,x=exactTrig(th),thr=((th%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+    const tl=fmtPi(thr);const deg=Math.round(thr*180/Math.PI*100)/100;
+    h+='<div class="pill"><span class="k">θ</span><span class="mono">'+(tl&&x?tl:fmt(thr))+' = '+fmt(deg,2)+'°</span>'+
+      '<span class="k" style="color:#c74440">sin</span><span class="mono">'+(x?x.s:fmt(Math.sin(th)))+'</span>'+
+      '<span class="k" style="color:#2d70b3">cos</span><span class="mono">'+(x?x.c:fmt(Math.cos(th)))+'</span>'+
+      '<span class="k">tan</span><span class="mono">'+(x?x.t:fmt(Math.tan(th)))+'</span></div>';
+  }
+  if(lastPills!==h){pillsEl.innerHTML=h;lastPills=h;}
+}
+pillsEl.addEventListener('click',ev=>{const b=ev.target.closest('[data-p]');if(!b)return;if(b.dataset.p==='tan')tangent=!tangent;else{trace=null;tangent=false;}draw();});
+
+/* pointer handling on the graph */
+const ptrs=new Map();let gest=null;
+function hitTest(X,Y){
+  let best=null,bd=26;
+  const consider=(d,obj)=>{if(d<bd){bd=d;best=obj;}};
+  for(const p of poiCache)consider(Math.hypot(sx(p.x)-X,sy(p.y)-Y)-6,{id:sel,x:p.x,y:p.y,t:p.t});
+  for(const e of S.exprs){
+    if(e.hidden)continue;
+    if(e.kind==='point'){const x=e.px(0,0,0),y=e.py(0,0,0);consider(Math.hypot(sx(x)-X,sy(y)-Y)-4,{id:e.id,x,y,t:'point'});}
+    if(e.kind==='fx'){for(let dX=-22;dX<=22;dX+=2){const x=wx(X+dX),y=e.f(x,0,0);if(isFinite(y))consider(Math.hypot(dX,sy(y)-Y),{id:e.id,x,y,t:'curve'});}}
+    if(e.kind==='gy'){for(let dY=-22;dY<=22;dY+=2){const y=wy(Y+dY),x=e.f(0,y,0);if(isFinite(x))consider(Math.hypot(dY,sx(x)-X),{id:e.id,x,y,t:'curve'});}}
+  }
+  return best;
+}
+function traceMove(X,Y){
+  const e=getE(trace.id);if(!e)return;
+  if(e.kind==='fx'){
+    let x=wx(X);
+    const e2=sel===e.id?poiCache:[];for(const p of e2){if(Math.abs(sx(p.x)-X)<10){trace.x=p.x;trace.y=p.y;trace.t=p.t;draw();return;}}
+    trace.x=x;trace.t='curve';
+  }else if(e.kind==='gy'){trace.y=wy(Y);trace.t='curve';}
+  draw();
+}
+function ucHandleHit(X,Y){if(!S.set.uc)return false;const P={X:sx(Math.cos(S.uc)),Y:sy(Math.sin(S.uc))};return Math.hypot(P.X-X,P.Y-Y)<30;}
+function ucMove(X,Y){
+  let a=Math.atan2(wy(Y),wx(X));if(a<0)a+=2*Math.PI;
+  for(let k=0;k<=24;k++){if(k%2&&k%3)continue;const s=k*Math.PI/12;if(Math.abs(a-s)<3*Math.PI/180){a=s%(2*Math.PI);break;}}
+  S.uc=a;draw();save();
+}
+const pos=ev=>{const r=cv.getBoundingClientRect();return{X:ev.clientX-r.left,Y:ev.clientY-r.top};};
+cv.addEventListener('pointerdown',ev=>{
+  cv.setPointerCapture(ev.pointerId);const p=pos(ev);ptrs.set(ev.pointerId,p);
+  if(ptrs.size===1){
+    let mode='pan';
+    if(ucHandleHit(p.X,p.Y))mode='uc';
+    else if(trace&&isFinite(trace.x)&&Math.hypot(sx(trace.x)-p.X,sy(trace.y)-p.Y)<34)mode='trace';
+    gest={mode,sX:p.X,sY:p.Y,lX:p.X,lY:p.Y,t:performance.now(),moved:false};
+  }else if(ptrs.size===2){
+    const[a,b]=[...ptrs.values()];const mx=(a.X+b.X)/2,my=(a.Y+b.Y)/2;
+    gest={mode:'pinch',d0:Math.hypot(a.X-b.X,a.Y-b.Y)||1,s0:V.s,wx0:wx(mx),wy0:wy(my),moved:true};
+  }
+});
+cv.addEventListener('pointermove',ev=>{
+  if(!ptrs.has(ev.pointerId)||!gest)return;const p=pos(ev);ptrs.set(ev.pointerId,p);
+  if(gest.mode==='pinch'&&ptrs.size>=2){
+    const[a,b]=[...ptrs.values()];const d=Math.hypot(a.X-b.X,a.Y-b.Y);const mx=(a.X+b.X)/2,my=(a.Y+b.Y)/2;
+    V.s=Math.min(1e7,Math.max(1e-4,gest.s0*d/gest.d0));V.cx=gest.wx0-(mx-W/2)/V.s;V.cy=gest.wy0+(my-H/2)/V.s;draw();return;
+  }
+  if(Math.hypot(p.X-gest.sX,p.Y-gest.sY)>6)gest.moved=true;
+  if(gest.mode==='pan'&&gest.moved){V.cx-=(p.X-gest.lX)/V.s;V.cy+=(p.Y-gest.lY)/V.s;draw();}
+  else if(gest.mode==='trace')traceMove(p.X,p.Y);
+  else if(gest.mode==='uc')ucMove(p.X,p.Y);
+  gest.lX=p.X;gest.lY=p.Y;
+});
+function endPtr(ev){
+  if(!ptrs.has(ev.pointerId))return;ptrs.delete(ev.pointerId);
+  if(gest&&gest.mode!=='pinch'&&!gest.moved&&performance.now()-gest.t<500&&ev.type==='pointerup'){
+    const h=hitTest(gest.sX,gest.sY);
+    if(h){trace=h;if(h.t==='curve'||h.t==='point')sel=h.id;}
+    else if(gest.mode!=='uc'){trace=null;tangent=false;sel=focus?focus.id:null;}
+    if(focus){focus=null;setKb(false);tidy();renderList();}
+    draw();
+  }
+  if(ptrs.size===1&&gest&&gest.mode==='pinch'){const p=[...ptrs.values()][0];gest={mode:'pan',sX:p.X,sY:p.Y,lX:p.X,lY:p.Y,t:0,moved:true};}
+  else if(ptrs.size===0)gest=null;
+}
+cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
+cv.addEventListener('wheel',ev=>{ev.preventDefault();const p=pos(ev);const k=Math.exp(-ev.deltaY*(ev.deltaMode?0.05:0.0016));zoomAt(p.X,p.Y,k);},{passive:false});
+function zoomAt(X,Y,k){const x=wx(X),y=wy(Y);V.s=Math.min(1e7,Math.max(1e-4,V.s*k));V.cx=x-(X-W/2)/V.s;V.cy=y+(Y-H/2)/V.s;draw();}
+$('#zin').onclick=()=>zoomAt(W/2,H/2,1.5);
+$('#zout').onclick=()=>zoomAt(W/2,H/2,1/1.5);
+$('#zhome').onclick=()=>{homeView();if(S.set.uc)V.s=Math.min(W,H)*.32;draw();};
+
+/* resizable split (portrait) */
+const grip=$('#grip');
+grip.addEventListener('pointerdown',ev=>{
+  grip.setPointerCapture(ev.pointerId);const startY=ev.clientY,startH=$('#panel').getBoundingClientRect().height;
+  const mv=e=>{const h=Math.max(90,Math.min(window.innerHeight*.7,startH-(e.clientY-startY)));S.ph=h;document.documentElement.style.setProperty('--ph',h+'px');};
+  const up=()=>{grip.removeEventListener('pointermove',mv);grip.removeEventListener('pointerup',up);save();};
+  grip.addEventListener('pointermove',mv);grip.addEventListener('pointerup',up);
+});
+
+/* ---------------- sheets ---------------- */
+const sheet=$('#sheet'),box=$('#sheetBox');
+function openSheet(title,html,bind){
+  box.textContent='';
+  const inner=document.createElement('div');
+  inner.innerHTML='<div class="sh-h"><h2>'+title+'</h2><button data-close aria-label="Close">×</button></div>'+html;
+  box.appendChild(inner);box.scrollTop=0;
+  hideToast();sheet.classList.add('open');
+  if(bind)bind(inner);
+}
+function closeSheet(){sheet.classList.remove('open');box.innerHTML='';}
+sheet.addEventListener('click',ev=>{if(ev.target===sheet||ev.target.closest('[data-close]'))closeSheet();});
+
+const EXAMPLES=[
+  {n:'Parabola',d:'Vertex form with sliders',e:[['y=a(x-h)^2+k'],['a=1',1],['h=0',1],['k=0',1]]},
+  {n:'Sine wave',d:'Amplitude, period, shifts',e:[['y=a\\sin(b(x-c))+d'],['a=2',1],['b=1',1],['c=0',1],['d=0',1]],pi:true},
+  {n:'Circle',d:'Centre (h, k), radius r',e:[['(x-h)^2+(y-k)^2=r^2'],['h=0',1],['k=0',1],['r=4',1]]},
+  {n:'Ellipse & hyperbola',d:'Conic sections',e:[['\\frac{x^2}{a^2}+\\frac{y^2}{b^2}=1'],['\\frac{x^2}{a^2}-\\frac{y^2}{b^2}=1'],['a=4',1],['b=2',1]]},
+  {n:'Exponential & log',d:'Inverse functions',e:[['y=e^x'],['y=\\ln(x)'],['y=x']]},
+  {n:'Derivative',d:'A curve and its slope',e:[['y=x^3-3x'],['y=\\deriv{x^3-3x}']]},
+  {n:'Piecewise',d:'Graphs limited with { }',e:[['y=-x\\{x<0\\}'],['y=x^2\\{0\\le x\\le 2\\}'],['y=4\\{x>2\\}']]},
+  {n:'Inequalities',d:'Shaded regions',e:[['y\\ge x^2-4'],['y<2x+1']]},
+  {n:'Reciprocal trig',d:'tan, sec and friends',e:[['y=\\tan(x)'],['y=\\sec(x)'],['y=\\cos(x)']],pi:true},
+  {n:'Polar rose',d:'r = a sin(kθ)',e:[['r=a\\sin(k\\theta)'],['a=4',1],['k=3',[1,10]]]}
+];
+function loadExample(i){
+  const ex=EXAMPLES[i],snap=snapshot();
+  S.ci=0;S.exprs=ex.e.map(([t,sl])=>newExpr(t,sl?{slider:Array.isArray(sl)?sl:[-10,10]}:{}));
+  S.set.pi=!!ex.pi;focus=null;sel=null;trace=null;setKb(false);homeView();
+  closeSheet();refresh();save();toast('Loaded '+ex.n,()=>{restore(snap);save();});
+}
+function openMenu(){
+  const s=S.set;
+  const sw=(k,on)=>'<button class="sw2'+(on?' on':'')+'" data-t="'+k+'" role="switch" aria-checked="'+on+'"></button>';
+  openSheet('Graphite',
+    '<div class="menu-top"><button data-a="guide">Open the guide</button></div>'+
+    '<div class="sec">Examples</div><div class="grid2">'+EXAMPLES.map((x,i)=>'<button class="card-btn" data-ex="'+i+'"><b>'+x.n+'</b><span>'+x.d+'</span></button>').join('')+'</div>'+
+    '<div class="sec">Angles</div><div class="seg" data-seg="deg"><button class="'+(!s.deg?'on':'')+'" data-v="0">Radians</button><button class="'+(s.deg?'on':'')+'" data-v="1">Degrees</button></div>'+
+    '<div class="sec">Display</div>'+
+    '<div class="opt"><span>x-axis in multiples of π</span>'+sw('pi',s.pi)+'</div>'+
+    '<div class="opt"><span>Grid lines</span>'+sw('grid',s.grid)+'</div>'+
+    '<div class="opt"><span>Unit circle</span>'+sw('uc',s.uc)+'</div>'+
+    '<div class="sec">Theme</div><div class="seg" data-seg="theme"><button data-v="auto" class="'+(s.theme==='auto'?'on':'')+'">Auto</button><button data-v="light" class="'+(s.theme==='light'?'on':'')+'">Light</button><button data-v="dark" class="'+(s.theme==='dark'?'on':'')+'">Dark</button></div>'+
+    '<div class="sec">Graph</div><div class="act"><button data-a="img">Save image</button><button data-a="home">Reset view</button><button data-a="clear" class="danger">Clear all</button></div>'+
+    '<p class="hint">Tip: tap a curve to trace it and see intercepts, turning points and intersections. Pinch to zoom.</p>',
+    b=>b.addEventListener('click',ev=>{
+      const t=ev.target.closest('button');if(!t)return;
+      if(t.dataset.ex!==undefined){loadExample(+t.dataset.ex);return;}
+      if(t.dataset.t){const k=t.dataset.t;S.set[k]=!S.set[k];t.classList.toggle('on',S.set[k]);t.setAttribute('aria-checked',S.set[k]);
+        if(k==='uc'&&S.set.uc){V.cx=0;V.cy=0;V.s=Math.min(W,H)*.32;}refresh();save();return;}
+      const seg=t.closest('[data-seg]');
+      if(seg){seg.querySelectorAll('button').forEach(x=>x.classList.toggle('on',x===t));
+        if(seg.dataset.seg==='deg'){S.set.deg=t.dataset.v==='1';applySettings();refresh();}
+        else{S.set.theme=t.dataset.v;applySettings();}
+        save();return;}
+      if(t.dataset.a==='guide'){openGuide();return;}
+      if(t.dataset.a==='home'){homeView();closeSheet();draw();}
+      if(t.dataset.a==='img'){closeSheet();saveImage();}
+      if(t.dataset.a==='clear'){const snap=snapshot();S.exprs=[];S.ci=0;focus=null;sel=null;trace=null;setKb(false);closeSheet();refresh();save();toast('Cleared all expressions',()=>{restore(snap);save();});}
+    }));
+}
+$('#menuBtn').onclick=openMenu;
+$('#helpBtn').onclick=()=>openGuide();
+function applySettings(){
+  ANG=S.set.deg?Math.PI/180:1;
+  if(S.set.theme==='auto')document.documentElement.removeAttribute('data-theme');else document.documentElement.dataset.theme=S.set.theme;
+  readColors();draw();
+}
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{readColors();draw();});
+
+function openExprSheet(e){
+  const canTable=e.kind==='fx';
+  openSheet('Expression '+(S.exprs.indexOf(e)+1),
+    '<div class="sec">Colour</div><div class="colors">'+PALETTE.map(c=>'<button style="--c:'+c+'" data-c="'+c+'" class="'+(c===e.color?'on':'')+'" aria-label="Colour"></button>').join('')+'</div>'+
+    '<div class="sec">Actions</div><div class="act">'+(canTable?'<button data-a="table">Table of values</button>':'')+
+    (plottable(e)?'<button data-a="vis">'+(e.hidden?'Show':'Hide')+' graph</button>':'')+
+    '<button data-a="dup">Duplicate</button><button data-a="del" class="danger">Delete</button></div>',
+    b=>b.addEventListener('click',ev=>{
+      const t=ev.target.closest('button');if(!t)return;
+      if(t.dataset.c){e.color=t.dataset.c;b.querySelectorAll('[data-c]').forEach(x=>x.classList.toggle('on',x===t));renderList();draw();save();return;}
+      const a=t.dataset.a;
+      if(a==='table'){openTable(e);return;}
+      if(a==='vis'){e.hidden=!e.hidden;closeSheet();renderList();draw();save();}
+      if(a==='dup'){closeSheet();duplicate(e);}
+      if(a==='del'){const snap=snapshot();S.exprs=S.exprs.filter(x=>x!==e);if(focus&&focus.id===e.id){focus=null;setKb(false);}if(sel===e.id)sel=null;if(trace&&trace.id===e.id)trace=null;closeSheet();refresh();save();toast('Deleted expression',()=>{restore(snap);save();});}
+    }));
+}
+function freeLetter(){
+  const used=new Set();for(const x of S.exprs)for(const it of flatItems(x.tree))if(it.t==='c')used.add(it.v);
+  for(const c of 'abcdhkmnpqstuvwzfgjlr')if(!used.has(c))return c;return null;
+}
+function flatItems(row,out=[]){for(const it of row.items){out.push(it);for(const s of slotsOf(it))flatItems(s,out);}return out;}
+function duplicate(e){
+  const n=newExpr();n.tree=cloneTree(e.tree);n.hidden=e.hidden;
+  if(e.slider)n.slider={min:e.slider.min,max:e.slider.max};
+  if(e.defName){const c=freeLetter();if(c)n.tree.items[0]=C(c);}
+  S.exprs.splice(S.exprs.indexOf(e)+1,0,n);refresh();save();
+}
+function openTable(e){
+  let st=-3,step=1;
+  const render=()=>{let h='<table class="tv"><thead><tr><th>x</th><th>y</th></tr></thead><tbody>';
+    for(let k=0;k<13;k++){const x=st+k*step;h+='<tr><td>'+fmt(x)+'</td><td>'+fmt(e.f(x,0,0))+'</td></tr>';}
+    return h+'</tbody></table>';};
+  openSheet('Table of values',
+    '<div class="tin"><label>Start x<input id="tS" inputmode="decimal" value="'+st+'"></label><label>Step<input id="tD" inputmode="decimal" value="'+step+'"></label></div><div id="tBody">'+render()+'</div>',
+    b=>{const u=()=>{const a=parseFloat($('#tS').value.replace('−','-')),d=parseFloat($('#tD').value.replace('−','-'));if(isFinite(a))st=a;if(isFinite(d)&&d!==0)step=d;$('#tBody').innerHTML=render();};
+      $('#tS').addEventListener('input',u);$('#tD').addEventListener('input',u);});
+}
+async function saveImage(){
+  const url=cv.toDataURL('image/png');
+  try{
+    const blob=await (await fetch(url)).blob();
+    const file=new File([blob],'graph.png',{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return;}
+  }catch(x){if(x&&x.name==='AbortError')return;}
+  openSheet('Save image','<img class="shot" src="'+url+'" alt="Graph"><p class="hint">Press and hold the image, then choose Save to Photos. On a computer, right-click it and choose Save image.</p>');
+}
+
+
+/* ---------------- guide ---------------- */
+const mathHtml=tex=>'<span class="m">'+renderRow(fromTex(tex),null,true)+'</span>';
+const GX=[]; // guide example sets
+function gx(tex,desc,extra){
+  const id=GX.push([[tex]].concat(extra||[]))-1;
+  return '<div class="gx"><div>'+mathHtml(tex)+(desc?'<span class="d">'+desc+'</span>':'')+'</div><button data-gx="'+id+'">Add</button></div>';
+}
+function key(label,text,cls){return'<b class="'+(cls||'')+'"><span>'+label+'</span></b><span>'+text+'</span>';}
+function openGuide(first){
+  GX.length=0;
+  const sec=(title,body,open)=>'<details'+(open?' open':'')+'><summary>'+title+'</summary><div class="gb">'+body+'</div></details>';
+  const html='<div class="guide">'+
+  '<p class="lead">'+(first?'Welcome! ':'')+'Graphite draws graphs as you type. Tap a section to open it.</p>'+
+  sec('Getting started',
+    '<p>Tap <b>+ New expression</b> (or any line in the list) and the keypad opens. The graph updates as you type.</p>'+
+    '<p>Tap <b>↵</b> to start a new line, and <b>⌄</b> or the graph to close the keypad. Everything is saved automatically on this device.</p>'+
+    '<p>Drag the bar between the graph and the list to give either one more room.</p>',first)+
+  sec('Using the keypad',
+    '<p>There are three pages. <b>123</b> has numbers and the basics, <b>f(x)</b> has functions like sin and ln, and <b>abc</b> has every letter. After you pick a function, the keypad jumps back to 123.</p>'+
+    '<div class="gk">'+
+      key('÷','Makes a stacked fraction. If you just typed a number or term, it becomes the top.')+
+      key('<i>a</i><sup>b</sup>','Power. Type the exponent, then press ▶ to come back down.')+
+      key('<i>a</i>²','Squares what you just typed.')+
+      key('√','Square root. <sup>n</sup>√ on the f(x) page gives cube roots and more.')+
+      key('<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>','◀ ▶ move the cursor, including in and out of fractions, powers and roots.','s')+
+      key('<svg viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg>','Delete. Hold it down to delete quickly.','s')+
+      key('<i>e</i>','Euler’s number (2.718…). eˣ on the f(x) page types e with a power ready.')+
+      key('d/dx','Derivative of whatever you put in the brackets.','s')+
+      key(',','Separates the two numbers of a point, like (2, 3).','s')+
+      key('{ }','Limits a graph to part of the x-axis. See “Parts of a graph”.','s')+
+    '</div>'+
+    '<p>Tap inside an expression to move the cursor there. On a computer you can type normally: <b>/</b> for fractions, <b>^</b> for powers, and words like sin, sqrt, pi or theta turn into symbols.</p>')+
+  sec('What you can graph',
+    gx('y=x^2-2x-3','Functions of x. You can skip the “y =”.')+
+    gx('y=2\\sin(x)+\\frac{1}{x}','Trig, fractions and more in one line')+
+    gx('x=y^2-4','Sideways graphs')+
+    gx('x^2+y^2=16','Circles')+
+    gx('\\frac{x^2}{25}+\\frac{y^2}{9}=1','Ellipses')+
+    gx('\\frac{x^2}{9}-\\frac{y^2}{4}=1','Hyperbolas')+
+    gx('y=\\deriv{x^3-6x}','Derivatives (the slope of a curve)')+
+    gx('r=2+2\\cos(\\theta)','Polar graphs use r and θ')+
+    gx('(2,3)','Points')+
+    gx('\\sin(\\frac{\\pi}{6})+\\log(100)','No x? It works like a calculator and shows the answer.'))+
+  sec('Shading with inequalities',
+    '<p>Use &lt; &gt; ≤ ≥ instead of = to shade a region. A solid edge means the edge is included (≤ ≥); a dashed edge means it isn’t (&lt; &gt;).</p>'+
+    gx('y\\ge x^2-4','Shades above the parabola')+
+    gx('x^2+y^2<9','Shades inside the circle'))+
+  sec('Parts of a graph { }',
+    '<p>Put a condition in { } after a graph to only draw it where the condition is true. This is how you draw piecewise functions: one line per piece.</p>'+
+    gx('y=x^2\\{0\\le x\\le 3\\}','Only between x = 0 and x = 3')+
+    gx('y=-x\\{x<0\\}','A piecewise function, part 1',[['y=\\sqrt{x}\\{x\\ge 0\\}']])+
+    '<p>The { } key is on the f(x) page, next to the inequality signs.</p>')+
+  sec('Sliders',
+    '<p>Any letter other than x, y, e, r and θ is a constant you can change. When you use one, an <b>Add slider</b> button appears under the line.</p>'+
+    gx('y=a(x-h)^2+k','Vertex form of a parabola',[['a=1',1],['h=0',1],['k=0',1]])+
+    '<p>Drag a slider to watch the graph change. Press ▶ to animate it, and tap the numbers at either end to change the range. You can also just type a new value, like a = 3.5.</p>')+
+  sec('Exploring the graph',
+    '<p>Drag to move around and pinch to zoom. The + and − buttons zoom too, and ⌂ goes back to the starting view.</p>'+
+    '<p><b>Tap a curve</b> to see a point’s coordinates, then drag the dot along the curve. Grey dots mark x-intercepts, the y-intercept, turning points (local max and min) and intersections with other curves. Tap a grey dot to read its exact value.</p>'+
+    '<p>While tracing, tap <b>Tangent</b> to draw the tangent line and show its slope.</p>'+
+    '<p>Tracing and grey dots work for graphs written as y = … .</p>')+
+  sec('Expression options',
+    '<p>Tap the coloured circle to hide or show a graph. Tap <b>⋯</b> on the right of a line to change its colour, see a table of values, duplicate it or delete it.</p>'+
+    '<p>After you delete something, <b>Undo</b> appears at the top of the screen for a few seconds.</p>')+
+  sec('Menu and settings',
+    '<p>The ☰ menu has ready-made examples and these settings:</p>'+
+    '<p><b>Radians or degrees</b> for all trig. <b>x-axis in multiples of π</b> labels the x-axis π/2, π, 3π/2… which suits trig graphs. <b>Unit circle</b> shows a circle with a point you can drag; at special angles it shows exact values like sin = √3/2.</p>'+
+    '<p>You can also switch light or dark theme, save the graph as an image, reset the view, or clear everything.</p>')+
+  sec('Messages you might see',
+    '<p><b>Add slider</b> – you used a letter that has no value yet.</p>'+
+    '<p><b>Missing a closing bracket</b> – press ) or ▶ to finish the bracket.</p>'+
+    '<p><b>Add “= …”</b> – an expression with y needs an equals sign or inequality.</p>'+
+    '<p><b>defined more than once</b> – two lines give the same letter a value. Delete or rename one.</p>'+
+    '<p>While you’re still typing, messages show in grey. They turn red if the line is left unfinished.</p>')+
+  sec('Installing on your phone',
+    '<p>Open Graphite’s web address in Safari, tap the Share button, then <b>Add to Home Screen</b>. It then opens full screen from its own icon and works without internet after the first visit.</p>')+
+  '</div>';
+  openSheet('Guide',html,b=>b.addEventListener('click',ev=>{
+    const t=ev.target.closest('[data-gx]');if(!t)return;
+    const snap=snapshot(),set=GX[+t.dataset.gx];
+    for(const [tex,sl] of set){if(sl&&S.exprs.some(e=>e.defName===tex.split('=')[0]))continue;S.exprs.push(newExpr(tex,sl?{slider:[-10,10]}:{}));}
+    t.textContent='Added';t.disabled=true;refresh();save();
+  }));
+}
+
+/* toast */
+let toastT=0,toastFn=null;
+function toast(msg,undo){$('#toastMsg').textContent=msg;toastFn=undo;$('#toastBtn').style.display=undo?'':'none';$('#toast').classList.add('show');clearTimeout(toastT);toastT=setTimeout(hideToast,4000);}
+function hideToast(){clearTimeout(toastT);$('#toast').classList.remove('show');}
+$('#toastBtn').onclick=()=>{const f=toastFn;toastFn=null;hideToast();if(f)f();};
+
+/* ---------------- boot ---------------- */
+loadState();
+if(S.ph)document.documentElement.style.setProperty('--ph',S.ph+'px');
+applySettings();
+renderKeypad();
+refresh();
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{renderList();draw();});
+document.addEventListener('gesturestart',e=>e.preventDefault());
+if('serviceWorker' in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('sw.js').catch(()=>{});
+if(FIRST_RUN)setTimeout(()=>openGuide(true),350);
+</script>
+</body>
+</html>
