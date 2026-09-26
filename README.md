@@ -35,8 +35,7 @@ Then open `http://localhost:8000`.
 
 ## Versions
 
-- **v2.0** — graphite icon, iPad / desktop / landscape layouts, smoother dashed inequality edges, curves now reach their asymptotes and domain edges (e.g. `ln(x)` near 0), and no more flicker on trig graphs when zoomed far out.
-- **v1.0** — first release. Preserved on the [`v1` branch](https://github.com/Titotoota/Graphite/tree/v1).
+See [CHANGELOG.md](CHANGELOG.md) for what changed in each version, and [Releases](https://github.com/Titotoota/Graphite/releases) to view or download any past version.
 
 ## License
 
