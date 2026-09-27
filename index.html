@@ -21,12 +21,14 @@
 :root{
   --paper:#f3f7f6; --card:#fcfefe; --ink:#16233a; --muted:#66788b; --rule:#d7e3e4;
   --key:#e3eaec; --key-num:#ffffff; --key-fn:#d8e3ec; --key-press:#c4d2da;
-  --accent:#1f5fd6; --accent-ink:#ffffff; --err:#b3412e;
+  --accent:#1f5fd6; --accent-ink:#ffffff; --err:#b3412e; --selbg:rgba(31,95,214,.2);
   --g-bg:#fbfdfd; --g-minor:rgba(40,110,130,.10); --g-major:rgba(40,110,130,.24); --g-axis:rgba(22,35,58,.78); --g-label:#4f6477;
   --shadow:0 1px 0 rgba(22,35,58,.10), 0 1px 2px rgba(22,35,58,.08);
   --sb:#16233a;
   box-sizing:border-box;
-  padding-top:env(safe-area-inset-top,0px);
+  /* status bar inset plus breathing room, but only on devices that have a status bar */
+  --top:calc(env(safe-area-inset-top,0px) + min(14px, env(safe-area-inset-top,0px) * 1000));
+  padding-top:var(--top);
   padding-bottom:env(safe-area-inset-bottom,0px);
   color-scheme:light;
 }
@@ -34,7 +36,7 @@
   :root:not([data-theme="light"]){
     --paper:#12171c; --card:#181e24; --ink:#e6edf2; --muted:#8b9aa8; --rule:#26303a;
     --key:#232b33; --key-num:#2c3540; --key-fn:#1f2d3d; --key-press:#3a4654;
-    --accent:#7aa5ff; --accent-ink:#0d1520; --err:#ef8f7a;
+    --accent:#7aa5ff; --accent-ink:#0d1520; --err:#ef8f7a; --selbg:rgba(122,165,255,.3);
     --g-bg:#151b21; --g-minor:rgba(150,200,215,.07); --g-major:rgba(150,200,215,.17); --g-axis:rgba(230,237,242,.78); --g-label:#98a9b8;
     --shadow:0 1px 0 rgba(0,0,0,.35);
     --sb:#0e1216;
@@ -44,14 +46,14 @@
 :root[data-theme="dark"]{
   --paper:#12171c; --card:#181e24; --ink:#e6edf2; --muted:#8b9aa8; --rule:#26303a;
   --key:#232b33; --key-num:#2c3540; --key-fn:#1f2d3d; --key-press:#3a4654;
-  --accent:#7aa5ff; --accent-ink:#0d1520; --err:#ef8f7a;
+  --accent:#7aa5ff; --accent-ink:#0d1520; --err:#ef8f7a; --selbg:rgba(122,165,255,.3);
   --g-bg:#151b21; --g-minor:rgba(150,200,215,.07); --g-major:rgba(150,200,215,.17); --g-axis:rgba(230,237,242,.78); --g-label:#98a9b8;
   --shadow:0 1px 0 rgba(0,0,0,.35);
   --sb:#0e1216;
   color-scheme:dark;
 }
-html{scroll-padding-top:env(safe-area-inset-top,0px);height:100%;overscroll-behavior:none;
-  background:linear-gradient(var(--sb),var(--sb)) top/100% env(safe-area-inset-top,0px) no-repeat,var(--paper)}
+html{scroll-padding-top:var(--top);height:100%;overscroll-behavior:none;
+  background:linear-gradient(var(--sb),var(--sb)) top/100% var(--top) no-repeat,var(--paper)}
 *,*::before,*::after{box-sizing:border-box}
 body{height:100%;margin:0;background:var(--paper);color:var(--ink);
   font-family:"Atkinson Hyperlegible",-apple-system,"Segoe UI",Roboto,sans-serif;font-size:15px;
@@ -145,6 +147,7 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .sqrt .idx+.radsvg{margin-left:0}
 .cur{display:inline-block;width:2px;height:1.12em;background:var(--accent);margin:0 -1px;animation:blink 1.05s steps(1) infinite;align-self:center;flex:none}
 @keyframes blink{50%{opacity:0}}
+.hl{background:var(--selbg)}
 @media (prefers-reduced-motion: reduce){.cur{animation:none}}
 
 /* keypad */
@@ -164,13 +167,15 @@ input[type=range]::-moz-range-thumb{width:20px;height:20px;border-radius:50%;bac
 .kp button svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .ctl{display:grid;grid-template-columns:1.25fr 1.25fr 1fr 1fr 1.2fr 1.2fr 1fr;gap:5px;margin-top:5px}
 .ctl button{height:44px}
+.kp button .sqrt{font-family:"STIX Two Text",serif;font-size:19px;line-height:1.2}
+.gk .radsvg,.kp button .radsvg{width:.55em;height:auto;stroke-width:1.4px}
 .kfrac{display:inline-flex;flex-direction:column;align-items:center;font-size:.72em;line-height:1.05}
 .kfrac span:first-child{border-bottom:1px solid currentColor;padding:0 2px}
 
 /* sheets */
 #sheet{position:fixed;inset:0;z-index:10;display:none;background:rgba(10,18,28,.38)}
 #sheet.open{display:block}
-#sheet .box{position:absolute;left:0;right:0;bottom:0;max-height:82%;overflow:auto;background:var(--card);
+#sheet .box{position:absolute;left:0;right:0;bottom:0;max-height:min(82%,calc(100% - var(--top) - 12px));overflow:auto;background:var(--card);
   border-radius:16px 16px 0 0;padding:14px 16px calc(18px + env(safe-area-inset-bottom,0px));box-shadow:0 -6px 30px rgba(0,0,0,.2)}
 .sh-h{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
 .sh-h h2{font-size:19px;margin:0;font-weight:700}
@@ -203,7 +208,7 @@ table.tv th{color:var(--muted);font-weight:400;font-family:"STIX Two Text",serif
 .tin input{display:block;width:100%;margin-top:4px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;padding:8px;-webkit-user-select:text;user-select:text}
 .shot{width:100%;border-radius:10px;border:1px solid var(--rule);-webkit-user-select:auto;user-select:auto;-webkit-touch-callout:default}
 .hint{font-size:13px;color:var(--muted);margin:8px 0 0}
-#toast{position:fixed;left:50%;top:calc(12px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:5;max-width:calc(100% - 130px);
+#toast{position:fixed;left:50%;top:calc(12px + var(--top));transform:translateX(-50%);z-index:5;max-width:calc(100% - 130px);
   background:var(--ink);color:var(--card);border-radius:12px;padding:10px 12px 10px 16px;display:none;align-items:center;gap:14px;font-size:14px;box-shadow:0 6px 20px rgba(0,0,0,.25)}
 #toast.show{display:flex}
 #toast button{color:var(--accent);font-weight:700;padding:4px 6px;filter:brightness(1.3)}
@@ -228,20 +233,36 @@ table.tv th{color:var(--muted);font-weight:400;font-family:"STIX Two Text",serif
 .gk span{font-size:14px}
 .gk svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .menu-top{display:flex;gap:8px;margin-bottom:4px}
+.act button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:700}
+.hint.err{color:var(--err)}
+.hint.err:empty{display:none}
+.ver{text-align:center;margin-top:16px}
+textarea.code{display:block;width:100%;min-height:120px;margin:0 0 10px;border:1px solid var(--rule);border-radius:10px;background:var(--paper);color:var(--ink);
+  font:13px/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:10px;resize:vertical;-webkit-user-select:text;user-select:text;word-break:break-all}
+.plist{border:1px solid var(--rule);border-radius:11px;overflow:hidden;margin-bottom:4px}
+.pick{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid var(--rule);cursor:pointer;min-height:48px}
+.pick:last-child{border-bottom:0}
+.pick input{width:20px;height:20px;accent-color:var(--accent);flex:none;margin:0}
+.pick .sw{flex:none;width:14px;height:14px;border-width:2px}
+.pick .m{font-size:19px;overflow-x:auto;scrollbar-width:none}
 .menu-top button{flex:1;border:1px solid var(--rule);border-radius:11px;padding:11px;background:var(--paper);font-weight:700}
 
 /* wide screens (tablets, computers, phones in landscape): list + keypad on the left, graph on the right */
 @media (min-width:760px), (orientation:landscape) and (min-width:520px) and (max-height:540px){
-  #app{grid-template-columns:min(390px,42vw) minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;}
-  #graphWrap{grid-column:2;grid-row:1 / span 2}
-  #grip{display:none}
-  #panel{grid-column:1;grid-row:1;height:auto;border-right:1px solid var(--rule)}
+  #app{grid-template-columns:var(--pw,min(390px,42vw)) 14px minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto;}
+  #graphWrap{grid-column:3;grid-row:1 / span 2}
+  #grip{grid-column:2;grid-row:1 / span 2;height:auto;border-top:0;border-left:1px solid var(--rule);border-right:1px solid var(--rule);cursor:col-resize}
+  #grip::before{width:4px;height:40px}
+  #panel{grid-column:1;grid-row:1;height:auto;overflow-x:hidden}
   body.kb #panel{height:auto}
-  #keypad{grid-column:1;grid-row:2;border-right:1px solid var(--rule)}
-  #sheet .box{left:50%;right:auto;width:min(460px,calc(100% - 32px));transform:translateX(-50%);bottom:auto;top:max(16px,8%);max-height:calc(100% - 2*max(16px,8%));border-radius:16px}
+  #keypad{grid-column:1;grid-row:2;overflow:hidden}
+  body.collapsed #app{grid-template-columns:0 14px minmax(0,1fr)}
+  body.collapsed #panel,body.collapsed #keypad{display:none}
+  body.collapsed #grip{border-left:0}
+  #sheet .box{left:50%;right:auto;width:min(460px,calc(100% - 32px));transform:translateX(-50%);bottom:auto;top:max(calc(16px + var(--top)),8%);max-height:calc(100% - max(calc(16px + var(--top)),8%) - max(16px,8%));border-radius:16px}
 }
 @media (min-width:1280px){
-  #app{grid-template-columns:420px minmax(0,1fr)}
+  #app{grid-template-columns:var(--pw,420px) 14px minmax(0,1fr)}
 }
 /* short screens (phones in landscape): a more compact keypad so the list keeps some room */
 @media (max-height:540px){
@@ -309,11 +330,12 @@ function fromTex(s){
   function rowUntil(stop){const r=R();while(i<s.length&&!(stop&&s.startsWith(stop,i))){const it=single();if(it)r.items.push(it);}return r;}
   function single(){
     const c=s[i];
+    if(c===undefined)return null;
     if(c===' '){i++;return null;}
     if(c==='\\'){
       let j=i+1;while(j<s.length&&/[a-zA-Z]/.test(s[j]))j++;
       const name=s.slice(i+1,j);
-      if(!name){const sym=s[j];i=j+1;if(sym==='{'){const a=rowUntil('\\}');i+=2;return{t:'brace',a};}return C(sym);}
+      if(!name){const sym=s[j];i=j+1;if(sym===undefined)return null;if(sym==='{'){const a=rowUntil('\\}');i+=2;return{t:'brace',a};}return C(sym);}
       i=j;
       switch(name){
         case 'frac':{const n=group(),d=group();return{t:'frac',n,d};}
@@ -609,10 +631,10 @@ function tryCompileI(n,vn){try{const g=compileI(n,vn);return X=>{try{return g(X)
 
 /* ---------------- state ---------------- */
 const KEY='graphite-v1';
-const APP_VERSION='2.0';
+const APP_VERSION='2.1.0';
 let S;
 function defaultState(){
-  return{exprs:[],view:null,set:{deg:false,pi:false,grid:true,uc:false,theme:'auto'},uc:Math.PI/6,nid:1,ci:0,ph:null};
+  return{exprs:[],view:null,set:{deg:false,pi:false,grid:true,uc:false,theme:'auto'},uc:Math.PI/6,nid:1,ci:0,ph:null,pw:null,pc:false};
 }
 function newExpr(tex,opts={}){
   const e={id:S.nid++,tree:tex?fromTex(tex):R(),color:opts.color||PALETTE[S.ci++%PALETTE.length],hidden:false};
@@ -630,7 +652,7 @@ function loadState(){
   S.exprs=[newExpr('y=a\\sin(bx)'),newExpr('a=2',{slider:[-10,10]}),newExpr('b=1',{slider:[-10,10]}),newExpr('\\frac{x^2}{36}+\\frac{y^2}{9}=1')];
 }
 let saveT=0;
-function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify({exprs:S.exprs.map(e=>({id:e.id,tree:JSON.parse(ser(e.tree)),color:e.color,hidden:e.hidden,slider:e.slider})),view:V,set:S.set,uc:S.uc,nid:S.nid,ci:S.ci,ph:S.ph}));}catch(e){}},250);}
+function save(){clearTimeout(saveT);saveT=setTimeout(()=>{try{localStorage.setItem(KEY,JSON.stringify({exprs:S.exprs.map(e=>({id:e.id,tree:JSON.parse(ser(e.tree)),color:e.color,hidden:e.hidden,slider:e.slider})),view:V,set:S.set,uc:S.uc,nid:S.nid,ci:S.ci,ph:S.ph,pw:S.pw,pc:S.pc}));}catch(e){}},250);}
 const snapshot=()=>JSON.stringify({exprs:S.exprs.map(e=>({id:e.id,tree:JSON.parse(ser(e.tree)),color:e.color,hidden:e.hidden,slider:e.slider})),ci:S.ci});
 function restore(snap){const d=JSON.parse(snap);S.exprs=d.exprs.map(e=>{e.tree=link(e.tree);return e;});S.ci=d.ci;focus=null;sel=null;trace=null;setKb(false);refresh();}
 
@@ -738,8 +760,9 @@ function esc(s){return s.replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 function renderRow(row,cur,top){
   const id=rowReg.push(row)-1;
   let h='<span class="row'+(row.items.length?'':' empty')+(top?' top':'')+'" data-rr="'+id+'">';
-  row.items.forEach((it,i)=>{if(cur&&cur.row===row&&cur.idx===i)h+=CUR;h+=renderItem(it,id,i,cur);});
-  if(cur&&cur.row===row&&cur.idx===row.items.length)h+=CUR;
+  const caret=cur&&!cur.sel&&cur.row===row;
+  row.items.forEach((it,i)=>{if(caret&&cur.idx===i)h+=CUR;h+=renderItem(it,id,i,cur);});
+  if(caret&&cur.idx===row.items.length)h+=CUR;
   return h+'</span>';
 }
 function renderItem(it,rid,i,cur){
@@ -844,6 +867,19 @@ function backspace(){
 }
 function press(k){
   if(!focus)return;
+  const sel=focus.cur.sel;
+  if(sel){
+    const{row}=focus.cur;
+    if(!['enter','hide','close','rbrace'].includes(k)){
+      if(k==='left')focus.cur={row,idx:sel.s};
+      else if(k==='right')focus.cur={row,idx:sel.e};
+      else if(k==='bksp')takeSel();
+      else if(k.startsWith('c:')){takeSel();typeChar(k.slice(2));}
+      else if(!wrapSel(k))focus.cur={row,idx:sel.e};
+      refresh(true);save();return;
+    }
+    focus.cur={row,idx:sel.e};
+  }
   if(k.startsWith('c:'))typeChar(k.slice(2));
   else if(k.startsWith('f:'))insFn(k.slice(2));
   else switch(k){
@@ -873,9 +909,63 @@ function press(k){
   }
   refresh(true);save();
 }
+/* selection: focus.cur = {row, idx, sel:{s,e}} marks items s..e-1 of row */
+function takeSel(){const{row,sel}=focus.cur;const items=row.items.splice(sel.s,sel.e-sel.s);focus.cur={row,idx:sel.s};return items;}
+function wrapSel(k){
+  const WR=['sqrt','abs','paren','brace','deriv','root','logb','frac','pow','sq','ex','tenx'];
+  if(!k.startsWith('f:')&&!WR.includes(k))return false;
+  const items=takeSel(),A=()=>R(items);
+  if(k.startsWith('f:')){put({t:'f',v:k.slice(2)});put({t:'paren',a:A()});return true;}
+  switch(k){
+    case 'sqrt':case 'abs':case 'paren':case 'brace':case 'deriv':put({t:k,a:A()});break;
+    case 'root':put({t:'root',i:R(),a:A()},0);break;
+    case 'logb':put({t:'logb',b:R(),a:A()},0);break;
+    case 'frac':put({t:'frac',n:A(),d:R()},1);break;
+    case 'pow':case 'sq':
+      put(items.length===1?items[0]:{t:'paren',a:A()});
+      if(k==='sq')put({t:'pow',a:R([C('2')])});else put({t:'pow',a:R()},0);break;
+    case 'ex':put(C('e'));put({t:'pow',a:A()});break;
+    case 'tenx':put(C('1'));put(C('0'));put({t:'pow',a:A()});break;
+  }
+  return true;
+}
+function setSel(row,s,e,anchor){focus.cur=s===e?{row,idx:s}:{row,idx:e,sel:{s,e},anchor};}
+// double-tap: select the side of = (or < > ≤ ≥) that was tapped, within the tapped row
+function selectSide(cur){
+  const row=cur.row,it=row.items,REL=new Set(['=','<','>','≤','≥']);
+  let s=0,e=it.length;
+  for(let i=0;i<it.length;i++){if(it[i].t==='c'&&REL.has(it[i].v)){if(i<cur.idx)s=i+1;else{e=i;break;}}}
+  if(s===e){s=0;e=it.length;}
+  setSel(row,s,e);
+}
+function shiftMove(dir){
+  const c=focus.cur,row=c.row;
+  let anchor=c.idx,head=c.idx;
+  if(c.sel){anchor=c.anchor??c.sel.s;head=anchor===c.sel.s?c.sel.e:c.sel.s;}
+  head=Math.max(0,Math.min(row.items.length,head+dir));
+  setSel(row,Math.min(anchor,head),Math.max(anchor,head),anchor);
+  if(!focus.cur.sel)focus.cur.idx=head;
+}
+// position of an item inside `row`, lifting through parents; null if `row` is not an ancestor
+function liftTo(p,row){
+  let r=p.row,s=p.s,e=p.e;
+  while(r!==row){const n=r._pn;if(!n)return null;const pr=r._pr;const k=pr.items.indexOf(n);s=k;e=k+1;r=pr;}
+  return{s,e};
+}
+function rangeBetween(A,B){
+  for(let r=A.row;r;r=r._pr){const b=liftTo(B,r);if(b){const a=liftTo(A,r);return{row:r,s:Math.min(a.s,b.s),e:Math.max(a.e,b.e)};}}
+  return null;
+}
+function paintSel(row,s,e){
+  listEl.querySelectorAll('.hl').forEach(x=>x.classList.remove('hl'));
+  if(!row||s>=e)return;
+  const id=rowReg.lastIndexOf(row);if(id<0)return;
+  listEl.querySelectorAll('[data-r="'+id+'"]').forEach(x=>{const i=+x.dataset.i;if(i>=s&&i<e)x.classList.add('hl');});
+}
 function closeGroupIfAtEnd(t){const r=focus.cur.row;if(r._pn&&r._pn.t===t&&focus.cur.idx===r.items.length){closeGroup([t]);return true;}return false;}
 function focusExpr(id,cur){
   const e=getE(id);if(!e)return;
+  if(S.pc){S.pc=false;applyPanel();save();}
   focus={id,cur:cur||{row:e.tree,idx:e.tree.items.length}};sel=id;
   setKb(true);refresh(true);
 }
@@ -896,6 +986,7 @@ function renderList(scrollToFocus){
   h+='<button class="addrow" data-act="add">+ New expression</button>';
   listEl.innerHTML=h;
   listEl.querySelectorAll('.m').forEach(fixDelims);
+  if(focus&&focus.cur.sel){paintSel(focus.cur.row,focus.cur.sel.s,focus.cur.sel.e);if(scrollToFocus){const h=listEl.querySelector('.hl');if(h)h.scrollIntoView({block:'nearest',inline:'nearest'});}}
   if(scrollToFocus&&focus){const c=listEl.querySelector('.cur');if(c){c.scrollIntoView({block:'nearest',inline:'nearest'});}}
 }
 function extraHtml(e){
@@ -955,10 +1046,64 @@ listEl.addEventListener('click',ev=>{
       if(ci.dataset.i!==undefined){const row=rowReg[+ci.dataset.r],i=+ci.dataset.i;const r=ci.getBoundingClientRect();cur={row,idx:ev.clientX<r.left+r.width/2?i:i+1};}
       else{const row=rowReg[+ci.dataset.rr];cur={row,idx:row.items.length};}
     }
+    const now=performance.now();
+    if(lastTap&&lastTap.id===e.id&&now-lastTap.t<400&&Math.hypot(ev.clientX-lastTap.x,ev.clientY-lastTap.y)<30){
+      lastTap=null;const at=cur?liftTo({row:cur.row,s:cur.idx,e:cur.idx},e.tree):null;selectSide({row:e.tree,idx:at?at.s:e.tree.items.length});renderList(true);return;
+    }
   }
+  lastTap={id:e.id,t:performance.now(),x:ev.clientX,y:ev.clientY};
   if(focus&&focus.id!==e.id){focus=null;tidy();}
   focusExpr(e.id,cur);
 });
+let lastTap=null;
+/* drag to select: click-drag with a mouse, or press and hold then drag on touch */
+let dsel=null;
+function hitPos(x,y,exEl){
+  const el=document.elementFromPoint(x,y);
+  const ci=el&&exEl.contains(el)?el.closest('[data-i],[data-rr]'):null;
+  if(ci&&ci.dataset.i!==undefined){const row=rowReg[+ci.dataset.r],i=+ci.dataset.i,r=ci.getBoundingClientRect();const k=x<r.left+r.width/2?i:i+1;return{row,s:k,e:k,item:i};}
+  if(ci){const row=rowReg[+ci.dataset.rr],r=ci.getBoundingClientRect();const k=x<r.left+r.width/2?0:row.items.length;return{row,s:k,e:k};}
+  const top=getE(+exEl.dataset.id).tree,r=exEl.querySelector('.math').getBoundingClientRect();
+  const k=x<r.left+r.width/2?0:top.items.length;return{row:top,s:k,e:k};
+}
+function dselStart(){
+  dsel.on=true;
+  const a=dsel.anchor;
+  if(dsel.touch&&a.item!==undefined)dsel.anchor={row:a.row,s:a.item,e:a.item+1};
+  dsel.range={row:dsel.anchor.row,s:dsel.anchor.s,e:dsel.anchor.e};
+  paintSel(dsel.range.row,dsel.range.s,dsel.range.e);
+  try{listEl.setPointerCapture(dsel.pid);}catch(x){}
+}
+listEl.addEventListener('pointerdown',ev=>{
+  dsel=null;
+  const ex=ev.target.closest('.ex');
+  if(!ex||!focus||+ex.dataset.id!==focus.id||!ev.target.closest('.math'))return;
+  dsel={pid:ev.pointerId,x:ev.clientX,y:ev.clientY,ex,anchor:hitPos(ev.clientX,ev.clientY,ex),on:false,touch:ev.pointerType!=='mouse'};
+  if(dsel.touch){const d=dsel;d.timer=setTimeout(()=>{if(dsel===d)dselStart();},450);}
+});
+listEl.addEventListener('pointermove',ev=>{
+  if(!dsel||ev.pointerId!==dsel.pid)return;
+  if(!dsel.on){
+    const d=Math.hypot(ev.clientX-dsel.x,ev.clientY-dsel.y);
+    if(dsel.touch){if(d>8){clearTimeout(dsel.timer);dsel=null;}return;}
+    if(d>5&&(ev.buttons&1))dselStart();else return;
+  }
+  const r=rangeBetween(dsel.anchor,hitPos(ev.clientX,ev.clientY,dsel.ex));
+  if(r){dsel.range=r;paintSel(r.row,r.s,r.e);}
+});
+function dselEnd(ev){
+  if(!dsel||ev.pointerId!==dsel.pid)return;
+  clearTimeout(dsel.timer);
+  const d=dsel;dsel=null;
+  if(!d.on)return;
+  noClickUntil=performance.now()+400;
+  if(ev.type==='pointerup'&&d.range)setSel(d.range.row,d.range.s,d.range.e);
+  renderList();
+}
+listEl.addEventListener('pointerup',dselEnd);
+listEl.addEventListener('pointercancel',dselEnd);
+listEl.addEventListener('touchmove',ev=>{if(dsel&&dsel.on)ev.preventDefault();},{passive:false});
+listEl.addEventListener('contextmenu',ev=>{if(dsel)ev.preventDefault();});
 function addSliders(e,names){
   let i=S.exprs.indexOf(e);
   for(const n of names){const s=newExpr(n+'=1',{slider:[-10,10]});S.exprs.splice(++i,0,s);}
@@ -989,20 +1134,22 @@ const I=s=>'<i>'+s+'</i>';
 const SVG={
   left:'<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>',
   right:'<svg viewBox="0 0 24 24"><path d="M9 5l7 7-7 7"/></svg>',
-  bksp:'<svg viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg>',
+  bksp:'<svg viewBox="0 0 24 24"><path d="M8 5h12.5a1.5 1.5 0 0 1 1.5 1.5v11a1.5 1.5 0 0 1-1.5 1.5H8l-6-7z"/><path d="M12.25 9.5l5 5M17.25 9.5l-5 5"/></svg>',
   enter:'<svg viewBox="0 0 24 24"><path d="M19 5v7H6"/><path d="M10 8l-4 4 4 4"/></svg>',
   hide:'<svg viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>'
 };
+const KSQRT='<span class="sqrt">'+RADSVG+'<span class="rarg"><i>a</i></span></span>';
+const KROOT='<span class="sqrt"><span class="idx"><i>n</i></span>'+RADSVG+'<span class="rarg"><i>a</i></span></span>';
 const FRACK='<span class="kfrac"><span>□</span><span>□</span></span>';
 const PAGES={
   main:{cols:8,keys:[
     ['c:x',I('x'),'mt'],['c:y',I('y'),'mt'],['sq',I('a')+'²','mt'],['pow',I('a')+'<sup>b</sup>','mt'],['c:7','7','n'],['c:8','8','n'],['c:9','9','n'],['frac','÷','mt'],
     ['paren','(','mt'],['close',')','mt'],['c:<','&lt;','mt'],['c:>','&gt;','mt'],['c:4','4','n'],['c:5','5','n'],['c:6','6','n'],['c:×','×','mt'],
     ['abs','|'+I('a')+'|','mt'],['c:e',I('e'),'mt'],['c:≤','≤','mt'],['c:≥','≥','mt'],['c:1','1','n'],['c:2','2','n'],['c:3','3','n'],['c:−','−','mt'],
-    ['c:a',I('a'),'mt'],['c:b',I('b'),'mt'],['sqrt','√','mt'],['c:π','π','mt'],['c:0','0','n'],['c:.','.','n'],['c:=','=','mt'],['c:+','+','mt']]},
+    ['c:a',I('a'),'mt'],['c:b',I('b'),'mt'],['sqrt',KSQRT,'mt'],['c:π','π','mt'],['c:0','0','n'],['c:.','.','n'],['c:=','=','mt'],['c:+','+','mt']]},
   func:{cols:8,keys:[
     ['f:sin','sin','f'],['f:cos','cos','f'],['f:tan','tan','f'],['f:csc','csc','f'],['f:sec','sec','f'],['f:cot','cot','f'],['f:ln','ln','f'],['f:log','log','f'],
-    ['f:asin','sin⁻¹','f'],['f:acos','cos⁻¹','f'],['f:atan','tan⁻¹','f'],['logb','log<sub>n</sub>','f'],['root','<sup>n</sup>√','f'],['ex','e<sup>x</sup>','f'],['tenx','10<sup>x</sup>','f'],['deriv','d/dx','f'],
+    ['f:asin','sin⁻¹','f'],['f:acos','cos⁻¹','f'],['f:atan','tan⁻¹','f'],['logb','log<sub>n</sub>','f'],['root',KROOT,'f'],['ex','e<sup>x</sup>','f'],['tenx','10<sup>x</sup>','f'],['deriv','d/dx','f'],
     ['c:x',I('x'),'mt'],['c:y',I('y'),'mt'],['c:r',I('r'),'mt'],['c:θ',I('θ'),'mt'],['c:π','π','mt'],['c:e',I('e'),'mt'],['abs','|'+I('a')+'|','mt'],['frac','÷','mt'],
     ['paren','(','mt'],['close',')','mt'],['c:,',',','mt'],['brace','{ }','mt'],['c:<','&lt;','mt'],['c:>','&gt;','mt'],['c:≤','≤','mt'],['c:≥','≥','mt']]},
   abc:{cols:10,keys:[
@@ -1038,8 +1185,11 @@ function setKb(on){if(!on&&document.body.classList.contains('kb'))noClickUntil=p
 
 /* physical keyboard */
 document.addEventListener('keydown',ev=>{
-  if(ev.target.closest('input')||ev.metaKey||ev.ctrlKey||ev.altKey||sheet.classList.contains('open'))return;
+  if(ev.target.closest('input,textarea')||sheet.classList.contains('open'))return;
   const k=ev.key;
+  if((ev.metaKey||ev.ctrlKey)&&(k==='a'||k==='A')&&focus){ev.preventDefault();const t=getE(focus.id).tree;setSel(t,0,t.items.length);renderList(true);return;}
+  if(ev.metaKey||ev.ctrlKey||ev.altKey)return;
+  if(focus&&ev.shiftKey&&(k==='ArrowLeft'||k==='ArrowRight')){ev.preventDefault();shiftMove(k==='ArrowLeft'?-1:1);renderList(true);return;}
   if(!focus){
     if(k.length===1&&/[0-9a-zA-Z.(\-|]/.test(k)){const last=S.exprs[S.exprs.length-1];
       if(last&&!last.tree.items.length)focusExpr(last.id);else{const n=newExpr();S.exprs.push(n);focusExpr(n.id);}}
@@ -1545,13 +1695,31 @@ $('#zin').onclick=()=>zoomAt(W/2,H/2,1.5);
 $('#zout').onclick=()=>zoomAt(W/2,H/2,1/1.5);
 $('#zhome').onclick=()=>{homeView();if(S.set.uc)V.s=Math.min(W,H)*.32;draw();};
 
-/* resizable split (portrait) */
+/* resizable split: drag up/down in portrait, left/right when the list sits beside the graph */
 const grip=$('#grip');
+const WIDE=matchMedia('(min-width:760px), (orientation:landscape) and (min-width:520px) and (max-height:540px)');
+function applyPanel(){
+  if(S.pw)document.documentElement.style.setProperty('--pw',S.pw+'px');else document.documentElement.style.removeProperty('--pw');
+  document.body.classList.toggle('collapsed',!!S.pc);
+}
 grip.addEventListener('pointerdown',ev=>{
-  grip.setPointerCapture(ev.pointerId);const startY=ev.clientY,startH=$('#panel').getBoundingClientRect().height;
-  const mv=e=>{const h=Math.max(90,Math.min(window.innerHeight*.7,startH-(e.clientY-startY)));S.ph=h;document.documentElement.style.setProperty('--ph',h+'px');};
-  const up=()=>{grip.removeEventListener('pointermove',mv);grip.removeEventListener('pointerup',up);save();};
-  grip.addEventListener('pointermove',mv);grip.addEventListener('pointerup',up);
+  grip.setPointerCapture(ev.pointerId);
+  let mv,moved=false;
+  if(WIDE.matches){
+    const startX=ev.clientX,startW=S.pc?0:$('#panel').getBoundingClientRect().width;
+    mv=e=>{
+      if(Math.abs(e.clientX-startX)>4)moved=true;if(!moved)return;
+      const w=Math.min(window.innerWidth*.7,startW+(e.clientX-startX));
+      S.pc=w<140;S.pw=S.pc?(startW>=240?Math.round(startW):S.pw):Math.round(Math.max(240,w));applyPanel();
+    };
+  }else{
+    const startY=ev.clientY,startH=$('#panel').getBoundingClientRect().height;
+    mv=e=>{moved=true;const h=Math.max(90,Math.min(window.innerHeight*.7,startH-(e.clientY-startY)));S.ph=h;document.documentElement.style.setProperty('--ph',h+'px');};
+  }
+  const up=()=>{grip.removeEventListener('pointermove',mv);grip.removeEventListener('pointerup',up);grip.removeEventListener('pointercancel',up);
+    if(!moved&&S.pc){S.pc=false;applyPanel();}
+    save();};
+  grip.addEventListener('pointermove',mv);grip.addEventListener('pointerup',up);grip.addEventListener('pointercancel',up);
 });
 
 /* ---------------- sheets ---------------- */
@@ -1567,42 +1735,257 @@ function openSheet(title,html,bind){
 function closeSheet(){sheet.classList.remove('open');box.innerHTML='';}
 sheet.addEventListener('click',ev=>{if(ev.target===sheet||ev.target.closest('[data-close]'))closeSheet();});
 
-const EXAMPLES=[
-  {n:'Parabola',d:'Vertex form with sliders',e:[['y=a(x-h)^2+k'],['a=1',1],['h=0',1],['k=0',1]]},
-  {n:'Sine wave',d:'Amplitude, period, shifts',e:[['y=a\\sin(b(x-c))+d'],['a=2',1],['b=1',1],['c=0',1],['d=0',1]],pi:true},
-  {n:'Circle',d:'Centre (h, k), radius r',e:[['(x-h)^2+(y-k)^2=r^2'],['h=0',1],['k=0',1],['r=4',1]]},
-  {n:'Ellipse & hyperbola',d:'Conic sections',e:[['\\frac{x^2}{a^2}+\\frac{y^2}{b^2}=1'],['\\frac{x^2}{a^2}-\\frac{y^2}{b^2}=1'],['a=4',1],['b=2',1]]},
-  {n:'Exponential & log',d:'Inverse functions',e:[['y=e^x'],['y=\\ln(x)'],['y=x']]},
-  {n:'Derivative',d:'A curve and its slope',e:[['y=x^3-3x'],['y=\\deriv{x^3-3x}']]},
-  {n:'Piecewise',d:'Graphs limited with { }',e:[['y=-x\\{x<0\\}'],['y=x^2\\{0\\le x\\le 2\\}'],['y=4\\{x>2\\}']]},
-  {n:'Inequalities',d:'Shaded regions',e:[['y\\ge x^2-4'],['y<2x+1']]},
-  {n:'Reciprocal trig',d:'tan, sec and friends',e:[['y=\\tan(x)'],['y=\\sec(x)'],['y=\\cos(x)']],pi:true},
-  {n:'Polar rose',d:'r = a sin(kθ)',e:[['r=a\\sin(k\\theta)'],['a=4',1],['k=3',[1,10]]]}
+/* ---------------- presets ----------------
+   A preset is {name, exprs:[{t:tex, c?:colour, h?:hidden, sl?:[min,max]}], pi?, deg?, view?:[cx,cy,halfHeight]}.
+   Expressions travel as the same TeX-like text that fromTex reads, so a preset is plain, readable JSON. */
+const TEXCH={'−':'-','×':'*','≤':'\\le ','≥':'\\ge ','π':'\\pi ','θ':'\\theta '};
+function toTex(row){let s='';for(const it of row.items)s+=itemTex(it);return s;}
+function itemTex(it){switch(it.t){
+  case 'c':return TEXCH[it.v]??it.v;
+  case 'f':return'\\'+it.v;
+  case 'paren':return'('+toTex(it.a)+')';
+  case 'abs':return'\\abs{'+toTex(it.a)+'}';
+  case 'brace':return'\\{'+toTex(it.a)+'\\}';
+  case 'frac':return'\\frac{'+toTex(it.n)+'}{'+toTex(it.d)+'}';
+  case 'pow':return'^{'+toTex(it.a)+'}';
+  case 'sqrt':return'\\sqrt{'+toTex(it.a)+'}';
+  case 'root':return'\\sqrt['+toTex(it.i)+']{'+toTex(it.a)+'}';
+  case 'logb':return'\\logb{'+toTex(it.b)+'}{'+toTex(it.a)+'}';
+  case 'deriv':return'\\deriv{'+toTex(it.a)+'}';
+}return'';}
+const SL=[-10,10];
+const LIB=[
+  {cat:'Algebra',items:[
+    {n:'Straight line',d:'Slope m, y-intercept c',e:[['y=mx+c'],['m=1',SL],['c=0',SL]]},
+    {n:'Parabola',d:'Vertex form with sliders',e:[['y=a(x-h)^2+k'],['a=1',SL],['h=0',SL],['k=0',SL]]},
+    {n:'Roots of a quadratic',d:'Factored form, roots p and q',e:[['y=a(x-p)(x-q)'],['a=1',SL],['p=-2',SL],['q=3',SL]]},
+    {n:'Cubic',d:'Change each coefficient',e:[['y=ax^3+bx^2+cx+d'],['a=1',SL],['b=0',SL],['c=-3',SL],['d=0',SL]]},
+    {n:'Absolute value',d:'V shape with shifts',e:[['y=a\\abs{x-h}+k'],['a=1',SL],['h=0',SL],['k=0',SL]]},
+    {n:'Square root',d:'Half a sideways parabola',e:[['y=a\\sqrt{x-h}+k'],['a=1',SL],['h=0',SL],['k=0',SL]]},
+    {n:'Reciprocal',d:'Asymptotes x = h and y = k',e:[['y=\\frac{a}{x-h}+k'],['a=1',SL],['h=0',SL],['k=0',SL]]},
+    {n:'Rational function',d:'Vertical and horizontal asymptotes',e:[['y=\\frac{x^2-1}{x^2-4}']]}
+  ]},
+  {cat:'Trigonometry',items:[
+    {n:'Sine and cosine',d:'The two basic waves',e:[['y=\\sin(x)'],['y=\\cos(x)']],pi:true},
+    {n:'Sine wave',d:'Amplitude, period, shifts',e:[['y=a\\sin(b(x-c))+d'],['a=2',SL],['b=1',SL],['c=0',SL],['d=0',SL]],pi:true},
+    {n:'Reciprocal trig',d:'tan, sec and friends',e:[['y=\\tan(x)'],['y=\\sec(x)'],['y=\\cos(x)']],pi:true},
+    {n:'Inverse trig',d:'sin⁻¹, cos⁻¹ and tan⁻¹',e:[['y=\\asin(x)'],['y=\\acos(x)'],['y=\\atan(x)']]},
+    {n:'Beats',d:'Two close frequencies added',e:[['y=\\sin(ax)+\\sin(bx)'],['a=5',[0,10]],['b=6',[0,10]]],v:[0,0,3]},
+    {n:'Damped oscillation',d:'A wave that dies away',e:[['y=e^{-kx}\\sin(wx)'],['y=e^{-kx}'],['y=-e^{-kx}'],['k=0.3',[0,2]],['w=4',[0,10]]],v:[4,0,2]}
+  ]},
+  {cat:'Exponential and log',items:[
+    {n:'Exponential and log',d:'Inverse functions',e:[['y=e^x'],['y=\\ln(x)'],['y=x']]},
+    {n:'Growth and decay',d:'y = a·bˣ',e:[['y=ab^x'],['a=1',SL],['b=2',[0,5]]]},
+    {n:'Logistic curve',d:'Growth that levels off',e:[['y=\\frac{L}{1+e^{-k(x-m)}}'],['L=5',SL],['k=1',[0,5]],['m=0',SL]]},
+    {n:'Log bases',d:'log₂, ln and log₁₀',e:[['y=\\logb{2}{x}'],['y=\\ln(x)'],['y=\\log(x)']]}
+  ]},
+  {cat:'Conic sections',items:[
+    {n:'Circle',d:'Centre (h, k), radius r',e:[['(x-h)^2+(y-k)^2=r^2'],['h=0',SL],['k=0',SL],['r=4',SL]]},
+    {n:'Ellipse and hyperbola',d:'Two conics, same a and b',e:[['\\frac{x^2}{a^2}+\\frac{y^2}{b^2}=1'],['\\frac{x^2}{a^2}-\\frac{y^2}{b^2}=1'],['a=4',SL],['b=2',SL]]},
+    {n:'Sideways parabola',d:'x as a function of y',e:[['x=a(y-k)^2+h'],['a=1',SL],['h=0',SL],['k=0',SL]]}
+  ]},
+  {cat:'Calculus',items:[
+    {n:'Derivative',d:'A curve and its slope',e:[['y=x^3-3x'],['y=\\deriv{x^3-3x}']]},
+    {n:'Second derivative',d:'Slope of the slope',e:[['y=x^4-4x^2'],['y=\\deriv{x^4-4x^2}'],['y=\\deriv{\\deriv{x^4-4x^2}}']],v:[0,0,8]},
+    {n:'Tangent line',d:'Slide a to move the point',e:[['y=x^3-3x'],['y=(3a^2-3)(x-a)+a^3-3a'],['(a,a^3-3a)'],['a=1',[-3,3]]]},
+    {n:'Secant to tangent',d:'Shrink h towards 0',e:[['y=x^2'],['y=(2a+h)(x-a)+a^2'],['(a,a^2)'],['(a+h,(a+h)^2)'],['a=1',[-3,3]],['h=1',[0,3]]]},
+    {n:'Taylor series of sin',d:'Polynomials that hug a curve',e:[['y=\\sin(x)'],['y=x-\\frac{x^3}{6}'],['y=x-\\frac{x^3}{6}+\\frac{x^5}{120}']],pi:true}
+  ]},
+  {cat:'Inequalities',items:[
+    {n:'Inequalities',d:'Shaded regions',e:[['y\\ge x^2-4'],['y<2x+1']]},
+    {n:'Feasible region',d:'Linear programming style',e:[['x+y\\le 6'],['y\\le 2x'],['x\\ge 0'],['y\\ge 0']],v:[3,3,5]},
+    {n:'Ring',d:'Between two circles',e:[['4<x^2+y^2<16']]}
+  ]},
+  {cat:'Polar',items:[
+    {n:'Polar rose',d:'r = a sin(kθ)',e:[['r=a\\sin(k\\theta)'],['a=4',SL],['k=3',[1,10]]]},
+    {n:'Cardioid',d:'A heart-shaped limaçon',e:[['r=a(1+\\cos(\\theta))'],['a=2',[0,5]]]},
+    {n:'Limaçon',d:'Inner loops appear when a > b',e:[['r=b+a\\cos(\\theta)'],['a=3',[0,6]],['b=2',[0,6]]]},
+    {n:'Spiral',d:'r = aθ',e:[['r=a\\theta'],['a=0.3',[0,2]]]}
+  ]},
+  {cat:'Piecewise',items:[
+    {n:'Piecewise',d:'Graphs limited with { }',e:[['y=-x\\{x<0\\}'],['y=x^2\\{0\\le x\\le 2\\}'],['y=4\\{x>2\\}']]},
+    {n:'Step function',d:'floor(x) rounds down',e:[['y=\\floor(x)']]}
+  ]},
+  {cat:'Fun',items:[
+    {n:'Heart',d:'An implicit curve',e:[['(x^2+y^2-1)^3=x^2y^3']],v:[0,0.2,1.8]},
+    {n:'Butterfly',d:'A famous polar curve',e:[['r=e^{\\sin(\\theta)}-2\\cos(4\\theta)+\\sin^{5}(\\frac{2\\theta-\\pi}{24})']],v:[0,0.5,4]},
+    {n:'Checkerboard',d:'sin(x)·sin(y) > 0',e:[['\\sin(x)\\sin(y)>0']],pi:true},
+    {n:'Ripples',d:'Circles from one equation',e:[['\\sin(x^2+y^2)=0']],v:[0,0,6]}
+  ]}
 ];
-function loadExample(i){
-  const ex=EXAMPLES[i],snap=snapshot();
-  S.ci=0;S.exprs=ex.e.map(([t,sl])=>newExpr(t,sl?{slider:Array.isArray(sl)?sl:[-10,10]}:{}));
-  S.set.pi=!!ex.pi;focus=null;sel=null;trace=null;setKb(false);homeView();
-  closeSheet();refresh();save();toast('Loaded '+ex.n,()=>{restore(snap);save();});
+const libPreset=x=>({name:x.n,exprs:x.e.map(([t,sl])=>sl?{t,sl}:{t}),pi:!!x.pi,view:x.v?[x.v[0],x.v[1],x.v[2]]:null});
+function normPreset(o){
+  if(!o||typeof o!=='object'||!Array.isArray(o.exprs))throw err('This isn’t a Graphite preset');
+  const exprs=o.exprs.slice(0,100).map(x=>{
+    if(!x||typeof x.t!=='string'||x.t.length>2000)throw err('This preset has an unreadable line');
+    const r={t:x.t};
+    if(typeof x.c==='string'&&/^#[0-9a-fA-F]{6}$/.test(x.c))r.c=x.c;
+    if(x.h)r.h=1;
+    if(Array.isArray(x.sl)&&x.sl.length===2&&x.sl.every(Number.isFinite)&&x.sl[0]<x.sl[1])r.sl=[x.sl[0],x.sl[1]];
+    return r;});
+  if(!exprs.length)throw err('This preset is empty');
+  const p={name:String(o.name||'Imported graph').trim().slice(0,60)||'Imported graph',exprs};
+  if(typeof o.pi==='boolean')p.pi=o.pi;
+  if(typeof o.deg==='boolean')p.deg=o.deg;
+  if(Array.isArray(o.view)&&o.view.length===3&&o.view.every(Number.isFinite)&&o.view[2]>0)p.view=o.view.slice();
+  return p;
+}
+const presetText=p=>JSON.stringify(Object.assign({graphite:1},p));
+function parsePresetText(txt){
+  const a=txt.indexOf('{'),b=txt.lastIndexOf('}');
+  if(a<0||b<a)throw err('Paste the whole preset text, starting with {');
+  let o;try{o=JSON.parse(txt.slice(a,b+1));}catch(x){throw err('That text is incomplete or damaged');}
+  return normPreset(o);
+}
+const PKEY='graphite-presets';
+function loadMine(){
+  try{const a=JSON.parse(localStorage.getItem(PKEY)||'[]');if(!Array.isArray(a))return[];
+    return a.map(x=>{try{return normPreset(x);}catch(e){return null;}}).filter(Boolean);}catch(e){return[];}
+}
+function saveMine(a){try{localStorage.setItem(PKEY,JSON.stringify(a));return true;}catch(e){return false;}}
+function applyPreset(p){
+  const snap=snapshot();
+  S.ci=0;
+  S.exprs=p.exprs.map(x=>{const e=newExpr(x.t,x.sl?{slider:x.sl,color:x.c}:{color:x.c});e.hidden=!!x.h;return e;});
+  if(p.pi!==undefined)S.set.pi=!!p.pi;
+  if(p.deg!==undefined)S.set.deg=!!p.deg;
+  focus=null;sel=null;trace=null;setKb(false);closeSheet();applySettings();
+  if(p.view){V.cx=p.view[0];V.cy=p.view[1];V.s=Math.min(1e7,Math.max(1e-4,H/2/p.view[2]));}else homeView();
+  refresh();save();toast('Loaded '+p.name,()=>{restore(snap);save();});
+}
+function presetOf(name,list){
+  return{name,exprs:list.map(e=>{const r={t:toTex(e.tree),c:e.color};if(e.hidden)r.h=1;if(e.kind==='slider'&&e.slider)r.sl=[e.slider.min,e.slider.max];return r;}),
+    pi:S.set.pi,deg:S.set.deg,view:[V.cx,V.cy,+(H/2/V.s).toPrecision(6)]};
+}
+// the chosen lines plus every slider/definition they rely on, in list order
+function withDeps(list){
+  const keep=new Set(list),byName=new Map(S.exprs.filter(e=>e.defName).map(e=>[e.defName,e])),todo=[...list];
+  while(todo.length){const e=todo.pop();if(!e.ast)continue;for(const v of varsOf(e.ast)){const d=byName.get(v);if(d&&!keep.has(d)){keep.add(d);todo.push(d);}}}
+  return S.exprs.filter(e=>keep.has(e));
+}
+const escA=s=>esc(String(s)).replace(/"/g,'&quot;');
+const nExpr=n=>n+' expression'+(n===1?'':'s');
+async function saveFile(p){
+  const name=(p.name.replace(/[^\w\- ]+/g,'').trim()||'graph')+'.graphite.json',text=presetText(p);
+  try{
+    const file=new File([text],name,{type:'application/json'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file]});return;}
+  }catch(x){if(x&&x.name==='AbortError')return;}
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type:'application/json'}));a.download=name;
+  document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},1500);
+}
+function openShare(p){
+  openSheet('Share “'+esc(p.name)+'”',
+    '<p class="hint" style="margin-top:0">Copy this text and paste it into Import… on any device, or save it as a file.</p>'+
+    '<textarea class="code" id="pCode" readonly>'+esc(presetText(p))+'</textarea>'+
+    '<div class="act"><button data-a="copy" class="pri">Copy text</button><button data-a="file">Save as file</button></div>',
+    b=>b.addEventListener('click',async ev=>{
+      const t=ev.target.closest('button');if(!t)return;
+      if(t.dataset.a==='file'){saveFile(p);return;}
+      if(t.dataset.a==='copy'){
+        const ta=$('#pCode');
+        try{await navigator.clipboard.writeText(ta.value);t.textContent='Copied';}
+        catch(x){ta.focus();ta.select();t.textContent='Press copy now';}
+      }
+    }));
+}
+let presetN=1;
+function openSavePreset(only){
+  const list=S.exprs.filter(e=>e.tree.items.length);
+  if(!list.length){toast('Add an expression first');return;}
+  const pre=new Set(only?withDeps([only]):list);
+  const mine=loadMine();while(mine.some(x=>x.name==='My graph '+presetN))presetN++;
+  openSheet('Save as preset',
+    '<div class="tin"><label>Name<input id="pName" maxlength="60" value="My graph '+presetN+'"></label></div>'+
+    '<div class="sec">Expressions in this preset</div>'+
+    '<div class="plist">'+list.map(e=>'<label class="pick"><input type="checkbox" data-pid="'+e.id+'"'+(pre.has(e)?' checked':'')+'>'+
+      '<span class="sw" style="--c:'+e.color+'"></span><span class="m">'+renderRow(e.tree,null,true)+'</span></label>').join('')+'</div>'+
+    '<p class="hint">Sliders used by the lines you pick are included automatically.</p>'+
+    '<div class="act"><button data-a="lib" class="pri">Save to library</button><button data-a="copy">Copy as text</button><button data-a="file">Save as file</button></div>',
+    b=>{
+      b.querySelectorAll('.pick .m').forEach(fixDelims);
+      b.addEventListener('click',ev=>{
+        const t=ev.target.closest('button');if(!t||!t.dataset.a)return;
+        const picked=[...b.querySelectorAll('[data-pid]')].filter(x=>x.checked).map(x=>getE(+x.dataset.pid)).filter(Boolean);
+        if(!picked.length){toast('Tick at least one expression');return;}
+        const p=presetOf($('#pName').value.trim().slice(0,60)||'My graph',withDeps(picked));
+        if(t.dataset.a==='lib'){
+          const all=loadMine();all.unshift(p);
+          if(!saveMine(all)){toast('Couldn’t save: storage is full or blocked');return;}
+          closeSheet();toast('Saved “'+p.name+'” to your library');
+        }
+        if(t.dataset.a==='copy')openShare(p);
+        if(t.dataset.a==='file')saveFile(p);
+      });
+    });
+}
+function openImport(){
+  openSheet('Import a preset',
+    '<p class="hint" style="margin-top:0">Paste preset text, or open a .graphite.json file.</p>'+
+    '<textarea class="code" id="pIn" placeholder="{&quot;graphite&quot;:1, …}"></textarea>'+
+    '<p class="hint err" id="pErr"></p>'+
+    '<div class="act"><button data-a="add" class="pri">Add to library</button><button data-a="open">Open file…</button></div>'+
+    '<input type="file" id="pFile" accept=".json,application/json,text/plain" hidden>',
+    b=>{
+      const add=txt=>{
+        try{const p=parsePresetText(txt);const all=loadMine();all.unshift(p);
+          if(!saveMine(all))throw err('Couldn’t save: storage is full or blocked');
+          openLibrary();toast('Added “'+p.name+'” to your library');}
+        catch(x){$('#pErr').textContent=x instanceof MathErr?x.message:'That isn’t a Graphite preset';}
+      };
+      $('#pFile').addEventListener('change',async ev=>{const f=ev.target.files[0];if(!f)return;if(f.size>500000){$('#pErr').textContent='That file is too big to be a preset';return;}add(await f.text());});
+      b.addEventListener('click',ev=>{
+        const t=ev.target.closest('button');if(!t)return;
+        if(t.dataset.a==='add')add($('#pIn').value);
+        if(t.dataset.a==='open')$('#pFile').click();
+      });
+    });
+}
+function openMinePreset(i){
+  const mine=loadMine(),p=mine[i];if(!p)return;
+  openSheet(esc(p.name),
+    '<p class="hint" style="margin-top:0">'+nExpr(p.exprs.length)+'</p>'+
+    '<div class="act"><button data-a="load" class="pri">Load</button><button data-a="share">Copy as text or file</button><button data-a="del" class="danger">Delete</button></div>',
+    b=>b.addEventListener('click',ev=>{
+      const t=ev.target.closest('button');if(!t)return;
+      if(t.dataset.a==='load')applyPreset(p);
+      if(t.dataset.a==='share')openShare(p);
+      if(t.dataset.a==='del'){const all=loadMine();all.splice(i,1);saveMine(all);openLibrary();toast('Deleted “'+p.name+'”',()=>{const a=loadMine();a.splice(i,0,p);saveMine(a);});}
+    }));
+}
+function openLibrary(){
+  const mine=loadMine();
+  const card=(attr,name,desc)=>'<button class="card-btn" '+attr+'><b>'+esc(name)+'</b><span>'+esc(desc)+'</span></button>';
+  openSheet('Preset library',
+    '<div class="act"><button data-a="save" class="pri">Save current graph…</button><button data-a="import">Import…</button></div>'+
+    '<div class="sec">My presets</div>'+
+    (mine.length?'<div class="grid2">'+mine.map((p,i)=>card('data-mine="'+i+'"',p.name,nExpr(p.exprs.length))).join('')+'</div>'
+      :'<p class="hint" style="margin-top:0">Graphs you save appear here. Tap <b>Save current graph…</b> to make one.</p>')+
+    LIB.map((c,ci)=>'<div class="sec">'+c.cat+'</div><div class="grid2">'+c.items.map((x,i)=>card('data-lib="'+ci+':'+i+'"',x.n,x.d)).join('')+'</div>').join(''),
+    b=>b.addEventListener('click',ev=>{
+      const t=ev.target.closest('button');if(!t)return;
+      if(t.dataset.lib){const[ci,i]=t.dataset.lib.split(':').map(Number);applyPreset(libPreset(LIB[ci].items[i]));return;}
+      if(t.dataset.mine!==undefined){openMinePreset(+t.dataset.mine);return;}
+      if(t.dataset.a==='save')openSavePreset();
+      if(t.dataset.a==='import')openImport();
+    }));
 }
 function openMenu(){
   const s=S.set;
   const sw=(k,on)=>'<button class="sw2'+(on?' on':'')+'" data-t="'+k+'" role="switch" aria-checked="'+on+'"></button>';
   openSheet('Graphite',
     '<div class="menu-top"><button data-a="guide">Open the guide</button></div>'+
-    '<div class="sec">Examples</div><div class="grid2">'+EXAMPLES.map((x,i)=>'<button class="card-btn" data-ex="'+i+'"><b>'+x.n+'</b><span>'+x.d+'</span></button>').join('')+'</div>'+
     '<div class="sec">Angles</div><div class="seg" data-seg="deg"><button class="'+(!s.deg?'on':'')+'" data-v="0">Radians</button><button class="'+(s.deg?'on':'')+'" data-v="1">Degrees</button></div>'+
     '<div class="sec">Display</div>'+
     '<div class="opt"><span>x-axis in multiples of π</span>'+sw('pi',s.pi)+'</div>'+
     '<div class="opt"><span>Grid lines</span>'+sw('grid',s.grid)+'</div>'+
     '<div class="opt"><span>Unit circle</span>'+sw('uc',s.uc)+'</div>'+
+    '<div class="sec">Presets</div><div class="menu-top"><button data-a="lib">Preset library</button><button data-a="savep">Save as preset…</button></div>'+
     '<div class="sec">Theme</div><div class="seg" data-seg="theme"><button data-v="auto" class="'+(s.theme==='auto'?'on':'')+'">Auto</button><button data-v="light" class="'+(s.theme==='light'?'on':'')+'">Light</button><button data-v="dark" class="'+(s.theme==='dark'?'on':'')+'">Dark</button></div>'+
     '<div class="sec">Graph</div><div class="act"><button data-a="img">Save image</button><button data-a="home">Reset view</button><button data-a="clear" class="danger">Clear all</button></div>'+
-    '<p class="hint">Tip: tap a curve to trace it and see intercepts, turning points and intersections. Pinch or scroll to zoom.</p>'+
-    '<p class="hint">Graphite v'+APP_VERSION+'</p>',
+    '<p class="hint ver">Graphite v'+APP_VERSION+'</p>',
     b=>b.addEventListener('click',ev=>{
       const t=ev.target.closest('button');if(!t)return;
-      if(t.dataset.ex!==undefined){loadExample(+t.dataset.ex);return;}
       if(t.dataset.t){const k=t.dataset.t;S.set[k]=!S.set[k];t.classList.toggle('on',S.set[k]);t.setAttribute('aria-checked',S.set[k]);
         if(k==='uc'&&S.set.uc){V.cx=0;V.cy=0;V.s=Math.min(W,H)*.32;}refresh();save();return;}
       const seg=t.closest('[data-seg]');
@@ -1611,6 +1994,8 @@ function openMenu(){
         else{S.set.theme=t.dataset.v;applySettings();}
         save();return;}
       if(t.dataset.a==='guide'){openGuide();return;}
+      if(t.dataset.a==='lib'){openLibrary();return;}
+      if(t.dataset.a==='savep'){openSavePreset();return;}
       if(t.dataset.a==='home'){homeView();closeSheet();draw();}
       if(t.dataset.a==='img'){closeSheet();saveImage();}
       if(t.dataset.a==='clear'){const snap=snapshot();S.exprs=[];S.ci=0;focus=null;sel=null;trace=null;setKb(false);closeSheet();refresh();save();toast('Cleared all expressions',()=>{restore(snap);save();});}
@@ -1631,7 +2016,7 @@ function openExprSheet(e){
     '<div class="sec">Colour</div><div class="colors">'+PALETTE.map(c=>'<button style="--c:'+c+'" data-c="'+c+'" class="'+(c===e.color?'on':'')+'" aria-label="Colour"></button>').join('')+'</div>'+
     '<div class="sec">Actions</div><div class="act">'+(canTable?'<button data-a="table">Table of values</button>':'')+
     (plottable(e)?'<button data-a="vis">'+(e.hidden?'Show':'Hide')+' graph</button>':'')+
-    '<button data-a="dup">Duplicate</button><button data-a="del" class="danger">Delete</button></div>',
+    '<button data-a="dup">Duplicate</button><button data-a="savep">Save as preset</button><button data-a="del" class="danger">Delete</button></div>',
     b=>b.addEventListener('click',ev=>{
       const t=ev.target.closest('button');if(!t)return;
       if(t.dataset.c){e.color=t.dataset.c;b.querySelectorAll('[data-c]').forEach(x=>x.classList.toggle('on',x===t));renderList();draw();save();return;}
@@ -1639,6 +2024,7 @@ function openExprSheet(e){
       if(a==='table'){openTable(e);return;}
       if(a==='vis'){e.hidden=!e.hidden;closeSheet();renderList();draw();save();}
       if(a==='dup'){closeSheet();duplicate(e);}
+      if(a==='savep'){openSavePreset(e);return;}
       if(a==='del'){const snap=snapshot();S.exprs=S.exprs.filter(x=>x!==e);if(focus&&focus.id===e.id){focus=null;setKb(false);}if(sel===e.id)sel=null;if(trace&&trace.id===e.id)trace=null;closeSheet();refresh();save();toast('Deleted expression',()=>{restore(snap);save();});}
     }));
 }
@@ -1678,8 +2064,11 @@ async function saveImage(){
 const mathHtml=tex=>'<span class="m">'+renderRow(fromTex(tex),null,true)+'</span>';
 const GX=[]; // guide example sets
 function gx(tex,desc,extra){
-  const id=GX.push([[tex]].concat(extra||[]))-1;
-  return '<div class="gx"><div>'+mathHtml(tex)+(desc?'<span class="d">'+desc+'</span>':'')+'</div><button data-gx="'+id+'">Add</button></div>';
+  const set=[[tex]].concat(extra||[]),id=GX.push(set)-1;
+  const lines=set.filter(x=>!x[1]).map(x=>mathHtml(x[0])).join('<br>');
+  const sl=set.filter(x=>x[1]).map(x=>x[0].split('=')[0]);
+  const note=sl.length?(desc?' ':'')+'Adds slider'+(sl.length>1?'s':'')+' for '+sl.join(', ').replace(/, ([^,]*)$/,' and $1')+'.':'';
+  return '<div class="gx"><div>'+lines+(desc||note?'<span class="d">'+(desc&&note?desc+'.':desc||'')+note+'</span>':'')+'</div><button data-gx="'+id+'">Add</button></div>';
 }
 function key(label,text,cls){return'<b class="'+(cls||'')+'"><span>'+label+'</span></b><span>'+text+'</span>';}
 function openGuide(first){
@@ -1690,16 +2079,16 @@ function openGuide(first){
   sec('Getting started',
     '<p>Tap <b>+ New expression</b> (or any line in the list) and the keypad opens. The graph updates as you type.</p>'+
     '<p>Tap <b>↵</b> to start a new line, and <b>⌄</b> or the graph to close the keypad. Everything is saved automatically on this device.</p>'+
-    '<p>Drag the bar between the graph and the list to give either one more room.</p>',first)+
+    '<p>Drag the bar between the graph and the list to give either one more room. When the list is beside the graph (tablets, computers and phones on their side), drag the bar left or right; drag it all the way left to hide the list, and tap it to bring the list back.</p>',first)+
   sec('Using the keypad',
     '<p>There are three pages. <b>123</b> has numbers and the basics, <b>f(x)</b> has functions like sin and ln, and <b>abc</b> has every letter. After you pick a function, the keypad jumps back to 123.</p>'+
     '<div class="gk">'+
       key('÷','Makes a stacked fraction. If you just typed a number or term, it becomes the top.')+
       key('<i>a</i><sup>b</sup>','Power. Type the exponent, then press ▶ to come back down.')+
       key('<i>a</i>²','Squares what you just typed.')+
-      key('√','Square root. <sup>n</sup>√ on the f(x) page gives cube roots and more.')+
+      key(KSQRT,'Square root. '+KROOT+' on the f(x) page gives cube roots and more.')+
       key('<svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>','◀ ▶ move the cursor, including in and out of fractions, powers and roots.','s')+
-      key('<svg viewBox="0 0 24 24"><path d="M9 5h11v14H9l-6-7z"/><path d="M12.5 9.5l5 5M17.5 9.5l-5 5"/></svg>','Delete. Hold it down to delete quickly.','s')+
+      key('<svg viewBox="0 0 24 24"><path d="M8 5h12.5a1.5 1.5 0 0 1 1.5 1.5v11a1.5 1.5 0 0 1-1.5 1.5H8l-6-7z"/><path d="M12.25 9.5l5 5M17.25 9.5l-5 5"/></svg>','Delete. Hold it down to delete quickly.','s')+
       key('<i>e</i>','Euler’s number (2.718…). eˣ on the f(x) page types e with a power ready.')+
       key('d/dx','Derivative of whatever you put in the brackets.','s')+
       key(',','Separates the two numbers of a point, like (2, 3).','s')+
@@ -1724,7 +2113,7 @@ function openGuide(first){
   sec('Parts of a graph { }',
     '<p>Put a condition in { } after a graph to only draw it where the condition is true. This is how you draw piecewise functions: one line per piece.</p>'+
     gx('y=x^2\\{0\\le x\\le 3\\}','Only between x = 0 and x = 3')+
-    gx('y=-x\\{x<0\\}','A piecewise function, part 1',[['y=\\sqrt{x}\\{x\\ge 0\\}']])+
+    gx('y=-x\\{x<0\\}','A piecewise function made of two pieces',[['y=\\sqrt{x}\\{x\\ge 0\\}']])+
     '<p>The { } key is on the f(x) page, next to the inequality signs.</p>')+
   sec('Sliders',
     '<p>Any letter other than x, y, e, r and θ is a constant you can change. When you use one, an <b>Add slider</b> button appears under the line.</p>'+
@@ -1735,11 +2124,18 @@ function openGuide(first){
     '<p><b>Tap a curve</b> to see a point’s coordinates, then drag the dot along the curve. Grey dots mark x-intercepts, the y-intercept, turning points (local max and min) and intersections with other curves. Tap a grey dot to read its exact value.</p>'+
     '<p>While tracing, tap <b>Tangent</b> to draw the tangent line and show its slope.</p>'+
     '<p>Tracing and grey dots work for graphs written as y = … .</p>')+
+  sec('Selecting part of an expression',
+    '<p><b>Double-tap</b> a line to select one side of the = sign. <b>Press and hold</b>, then drag, to select exactly what you want. With a mouse, click and drag. On a keyboard, hold Shift with ◀ ▶, or press Ctrl/⌘ A to select everything.</p>'+
+    '<p>Then press a key to wrap the selection. For example, write y = x³ − 3x, double-tap the right side and press <b>d/dx</b> to get its derivative. √, |a|, ( ), ÷, powers and every function on the f(x) page work the same way. Typing replaces the selection, and delete removes it.</p>')+
   sec('Expression options',
-    '<p>Tap the coloured circle to hide or show a graph. Tap <b>⋯</b> on the right of a line to change its colour, see a table of values, duplicate it or delete it.</p>'+
+    '<p>Tap the coloured circle to hide or show a graph. Tap <b>⋯</b> on the right of a line to change its colour, see a table of values, duplicate it, save it as a preset or delete it.</p>'+
     '<p>After you delete something, <b>Undo</b> appears at the top of the screen for a few seconds.</p>')+
+  sec('Presets: save and share graphs',
+    '<p>Open ☰ then <b>Preset library</b> for ready-made graphs to explore. Tapping one replaces what is on screen, and Undo brings your work back.</p>'+
+    '<p><b>Save as preset…</b> keeps your own graphs in the library. Tick the lines you want to group together; any sliders they use come along automatically. The graph’s view and settings are saved too.</p>'+
+    '<p>To move a preset to another device or send it to a friend, choose <b>Copy as text</b> or <b>Save as file</b>. On the other device, open the library, tap <b>Import…</b> and paste the text or open the file.</p>')+
   sec('Menu and settings',
-    '<p>The ☰ menu has ready-made examples and these settings:</p>'+
+    '<p>The ☰ menu has the preset library and these settings:</p>'+
     '<p><b>Radians or degrees</b> for all trig. <b>x-axis in multiples of π</b> labels the x-axis π/2, π, 3π/2… which suits trig graphs. <b>Unit circle</b> shows a circle with a point you can drag; at special angles it shows exact values like sin = √3/2.</p>'+
     '<p>You can also switch light or dark theme, save the graph as an image, reset the view, or clear everything.</p>')+
   sec('Messages you might see',
@@ -1770,6 +2166,7 @@ $('#toastBtn').onclick=()=>{const f=toastFn;toastFn=null;hideToast();if(f)f();};
 /* ---------------- boot ---------------- */
 loadState();
 if(S.ph)document.documentElement.style.setProperty('--ph',S.ph+'px');
+applyPanel();
 applySettings();
 renderKeypad();
 refresh();

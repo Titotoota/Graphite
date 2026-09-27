@@ -12,6 +12,8 @@ A lightweight graphing calculator for algebra, trig and calculus — runs entire
 - On-screen math keypad (works on touch devices)
 - Installable to your phone's home screen and works offline after the first load
 - Works on phones (portrait and landscape), iPad and computers — scroll to zoom and type straight from the keyboard on a PC
+- A preset library of ready-made graphs, plus saving, sharing and importing your own presets
+- Select part of an expression and wrap it in d/dx, √, a function and more
 
 ## Installing
 

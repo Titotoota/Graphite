@@ -2,6 +2,23 @@
 
 All notable changes to Graphite. Each version has a matching [GitHub release](https://github.com/Titotoota/Graphite/releases).
 
+## v2.1.0
+
+### New
+- **Preset library**: ☰ → **Preset library** opens nearly 40 ready-made graphs to explore, grouped into Algebra, Trigonometry, Exponential and log, Conic sections, Calculus, Inequalities, Polar, Piecewise and Fun.
+- **Save your own presets**: ☰ → **Save as preset…** (or ⋯ on any line) saves your graph to the library. Tick the lines you want to group together; any sliders they use are included automatically, along with the view and settings.
+- **Share presets**: copy a preset as text or save it as a file, then use **Import…** in the library to add it on another device.
+- **Select part of an expression**: double-tap to select one side of the = sign, or press and hold then drag (click and drag with a mouse; Shift + arrows or Ctrl/⌘ A on a keyboard). Pressing d/dx, √, |a|, ( ), ÷, powers or any function wraps the selection. For example, select x³ − 3x and press d/dx. Typing replaces the selection and delete removes it.
+- **Resizable list on iPad, computers and phones in landscape**: drag the bar between the list and the graph left or right. Drag it all the way left to hide the list, and tap it to bring the list back.
+
+### Changed
+- More space at the top of the screen on iPhone and iPad, so buttons and expressions no longer sit under the clock, Wi-Fi and battery icons.
+- The menu is reorganised: presets now sit below Display, the old tip is gone, and the version number is up to date.
+- Keypad: the √ and ⁿ√ keys now draw the root with its roof, and the ✕ in the delete key is centred.
+
+### Fixed
+- Guide examples now show every line their **Add** button inserts. For example, the piecewise example shows both of its pieces, and examples that add sliders say so.
+
 ## v2.0.0
 
 ### New
