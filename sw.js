@@ -1,5 +1,5 @@
 // Graphite service worker: makes the app open instantly and work offline.
-const CACHE = 'graphite-v4';
+const CACHE = 'graphite-v5';
 const SHELL = ['./', './index.html', './manifest.webmanifest',
   './icons/icon-180.png', './icons/icon-192.png', './icons/icon-512.png'];
 

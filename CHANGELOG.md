@@ -2,6 +2,11 @@
 
 All notable changes to Graphite. Each version has a matching [GitHub release](https://github.com/Titotoota/Graphite/releases).
 
+## v2.1.1
+
+### Changed
+- Removed the **Open the guide** button from the ☰ menu. The guide is still one tap away with the **?** button under the menu button.
+
 ## v2.1.0
 
 ### New

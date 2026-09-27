@@ -631,7 +631,7 @@ function tryCompileI(n,vn){try{const g=compileI(n,vn);return X=>{try{return g(X)
 
 /* ---------------- state ---------------- */
 const KEY='graphite-v1';
-const APP_VERSION='2.1.0';
+const APP_VERSION='2.1.1';
 let S;
 function defaultState(){
   return{exprs:[],view:null,set:{deg:false,pi:false,grid:true,uc:false,theme:'auto'},uc:Math.PI/6,nid:1,ci:0,ph:null,pw:null,pc:false};
@@ -1974,8 +1974,7 @@ function openMenu(){
   const s=S.set;
   const sw=(k,on)=>'<button class="sw2'+(on?' on':'')+'" data-t="'+k+'" role="switch" aria-checked="'+on+'"></button>';
   openSheet('Graphite',
-    '<div class="menu-top"><button data-a="guide">Open the guide</button></div>'+
-    '<div class="sec">Angles</div><div class="seg" data-seg="deg"><button class="'+(!s.deg?'on':'')+'" data-v="0">Radians</button><button class="'+(s.deg?'on':'')+'" data-v="1">Degrees</button></div>'+
+    '<div class="sec" style="margin-top:0">Angles</div><div class="seg" data-seg="deg"><button class="'+(!s.deg?'on':'')+'" data-v="0">Radians</button><button class="'+(s.deg?'on':'')+'" data-v="1">Degrees</button></div>'+
     '<div class="sec">Display</div>'+
     '<div class="opt"><span>x-axis in multiples of π</span>'+sw('pi',s.pi)+'</div>'+
     '<div class="opt"><span>Grid lines</span>'+sw('grid',s.grid)+'</div>'+
@@ -1993,7 +1992,6 @@ function openMenu(){
         if(seg.dataset.seg==='deg'){S.set.deg=t.dataset.v==='1';applySettings();refresh();}
         else{S.set.theme=t.dataset.v;applySettings();}
         save();return;}
-      if(t.dataset.a==='guide'){openGuide();return;}
       if(t.dataset.a==='lib'){openLibrary();return;}
       if(t.dataset.a==='savep'){openSavePreset();return;}
       if(t.dataset.a==='home'){homeView();closeSheet();draw();}
